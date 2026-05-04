@@ -145,4 +145,76 @@ Etapa 2 — Huertos - CRUD de huertos y asignación de trabajadores
             asignarTrabajador,
             desasignarTrabajador
         } = require('../controllers/huertos.controller');
-9.-
+9.- ¿Como vamos a probar todo esto?
+    Crearemos un trabajador desde 0, guartdando el uid que nos devuelve,
+    el primer paso es ir a postman y en la URL de registro agregamos lo siguente:
+    Paso 1:
+    Agregar URL y JSON
+    POST http://localhost:3000/auth/registro
+    {
+        "nombre": "Pedro Trabajador",
+        "email": "pedro@gmail.com",
+        "password": "123456",
+        "rol": "trabajador",
+        "tipo_documento": "rut",
+        "numero_documento": "98.765.432-1",
+        "fecha_nacimiento": "1995-07-20",
+        "telefono": "+56987654321",
+        "nacionalidad": "chileno",
+        "tipo_contrato": "con_contrato"
+    }
+    uid del trabajador: ssNeLKZsqPaWRcYuBnlZxzDxpQK2
+
+    Error, Falta iniciar la sesion
+
+    Paso 2:
+    Ingresamos con login de carlos
+    POST http://localhost:3000/auth/login
+    Login de carlos:
+    {
+        "email": "carlos@gmail.com",
+        "password": "123456"
+    }
+    uid de carlos: 7dEsTtmvYqXzigPqXQL2MPLCPqG3
+
+    Paso 3:
+    Agregamos el Huerto
+    POST http://localhost:3000/huertos 
+    Agregamos el JSON:
+    {
+        "nombre": "Huerto Los Aromos",
+        "ubicacion": "Chillan, Chile"
+    }
+    Response:
+    {
+        "mensaje": "Huerto creado correctamente",
+        "id": "R910NG5uBE0zTivZn7V6"
+    }
+
+    Paso 4:
+    POST http://localhost:3000/huertos/<id del huerto>/asignar
+    JSON:
+    {
+        "trabajadorId": "<uid del trabajador>"
+    }
+    Response:
+    {
+        "id": "R910NG5uBE0zTivZn7V6",
+        "nombre": "Huerto Los Aromos",
+        "ubicacion": "Chillan, Chile",
+        "duenoId": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
+        "creadoEn": "2026-05-04T00:49:56.202Z",
+        "trabajadorActivoId": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2"
+    }
+
+    Paso 5:
+    GET http://localhost:3000/huertos/<id del huerto>
+    Response:
+    {
+        "id": "R910NG5uBE0zTivZn7V6",
+        "nombre": "Huerto Los Aromos",
+        "ubicacion": "Chillan, Chile",
+        "duenoId": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
+        "creadoEn": "2026-05-04T00:49:56.202Z",
+        "trabajadorActivoId": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2"
+    }
