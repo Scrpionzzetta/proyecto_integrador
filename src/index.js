@@ -47,6 +47,7 @@ app.listen(PORT, () => {
 //-----------------------------------
 
 
+/*
 require('dotenv').config();
 const express = require('express');
 const app = express();
@@ -66,8 +67,43 @@ app.use('/huertos', huertoRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensaje: '¡Servidor funcionando!' });
+  });
+
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    });
+    */
+   
+   
+   
+//-----------------------------------
+
+require('dotenv').config();
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Llammos a las rutas
+const authRoutes = require('./routes/auth.routes');
+const huertoRoutes = require('./routes/huertos.routes');
+const temporadaRoutes = require('./routes/temporadas.routes');
+
+app.use(express.json());
+
+// estaremos llamando a: /auth/registro y /auth/login, por eso solo invocamos al '/auth'
+app.use('/auth', authRoutes);
+// Como creamos el huertos, deberemos invocarlo
+app.use('/huertos', huertoRoutes);
+//Asi como lo hiucimos en auth, y huertos tambien en temporadas
+app.use('/temporadas', temporadaRoutes);
+
+
+app.get('/', (req, res) => {
+  res.json({ mensaje: '¡Servidor funcionando!' });
 });
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+

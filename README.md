@@ -218,3 +218,49 @@ Etapa 2 — Huertos - CRUD de huertos y asignación de trabajadores
         "creadoEn": "2026-05-04T00:49:56.202Z",
         "trabajadorActivoId": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2"
     }
+
+--------------------------------------------------------------------------
+
+Etapa 3 — Temporadas y recolecciones - registro de trabajo diario
+
+1.- Creación de temporadasController, primero crearemos el controlador, en la caprtea correspondiente
+2.- Creación de temporadasRutes, en la carpeta correspondiente
+3.- Ahora pasamos a las pruebas de forma inmediata:
+    Paso 1 Login:
+        POST http://localhost:3000/auth/login
+        JSON:
+            {
+                "email": "carlos@gmail.com",
+                "password": "123456"
+            }
+        Response:
+            "uid": "7dEsTtmvYqXzigPqXQL2MPLCPqG3"
+    Paso 2 Crear Temporada:
+        Agregar El token: 7dEsTtmvYqXzigPqXQL2MPLCPqG3
+        POST http://localhost:3000/temporadas
+        JSON:
+            {
+                "huertoId": "<id del huerto creado antes>",
+                "fruta": "Manzana",
+                "fechaInicio": "2026-05-01"
+            } R910NG5uBE0zTivZn7V6
+        Response:
+            {
+                "mensaje": "Temporada creada correctamente",
+                "id": "ACpBcRZYanB8c52Z6cDu"
+            }
+    Paso 3 Listar Temporada:
+        GET http://localhost:3000/temporadas
+        Response:
+            {
+                "id": "ACpBcRZYanB8c52Z6cDu",
+                "huertoId": "R910NG5uBE0zTivZn7V6",
+                "fruta": "Manzana",
+                "fechaInicio": "2026-05-01",
+                "fechaFin": null,
+                "estado": "activa",
+                "creadoPor": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
+                "creadoEn": "2026-05-04T01:15:04.920Z"
+            }
+
+        
