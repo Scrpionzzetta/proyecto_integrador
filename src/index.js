@@ -80,6 +80,8 @@ app.get('/', (req, res) => {
 
 require('dotenv').config();
 const express = require('express');
+//Solo para el front
+const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -92,6 +94,10 @@ const recoleccionRoutes = require('./routes/recolecciones.routes');
 const pagoRoutes = require('./routes/pagos.routes');
 const fichaRoutes = require('./routes/fichas.routes');
 
+// Permitir peticiones desde Vue
+app.use(cors({
+  origin: 'http://localhost:5173'
+}));
 app.use(express.json());
 
 // estaremos llamando a: /auth/registro y /auth/login, por eso solo invocamos al '/auth'

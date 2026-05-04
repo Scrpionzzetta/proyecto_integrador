@@ -358,3 +358,6 @@ Front-end
 4.- Entramos a client y inbstalamos axios con el comando:
     npm install vue-router pinia axios
 5.- Creación de caprteas
+6.- Instalamos cors para recibir peticiones del front hacia el back
+    npm install cors
+7.- Generamos las vistas

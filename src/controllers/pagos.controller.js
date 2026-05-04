@@ -33,25 +33,25 @@ const calcularPago = async (req, res) => {
       .get();
 
     if (snapshot.empty) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         mensaje: 'No hay recolecciones en este periodo',
         total: 0
       });
     }
 
     // Filtramos las recolecciones por el rango de fechas
-    const fechaInicioDate = new Date(fechaInicio);
-    const fechaFinDate = new Date(fechaFin);
+    //const fechaInicioDate = new Date(fechaInicio);
+    //const fechaFinDate = new Date(fechaFin);
 
     const recolecciones = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(r => {
-        const fechaRecoleccion = new Date(r.fecha);
-        return fechaRecoleccion >= fechaInicioDate && fechaRecoleccion <= fechaFinDate;
+        const fechaRecoleccion = r.fecha.split('T')[0];
+        return fechaRecoleccion >= fechaInicio && fechaRecoleccion <= fechaFin;
       });
 
     if (recolecciones.length === 0) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         mensaje: 'No hay recolecciones en este periodo',
         total: 0
       });
