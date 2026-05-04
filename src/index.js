@@ -60,6 +60,7 @@ app.use(express.json());
 
 // estaremos llamando a: /auth/registro y /auth/login, por eso solo invocamos al '/auth'
 app.use('/auth', authRoutes);
+// Como creamos el huertos, deberemos invocarlo
 app.use('/huertos', huertoRoutes);
 
 

@@ -7,6 +7,10 @@ Etapa 4 — Pagos - cálculo y registro de pagos por periodo
 Etapa 5 — Fichas - expediente del trabajador con historial
 Etapa 6 — Vue.js - frontend conectado al backend
 
+--------------------------------------------------------------------------
+
+
+Etapa 1 — Base - Conexión Firebase + Auth + usuarios con roles
 
 1.- Creamos el proyecto con:
     npm init -y
@@ -76,7 +80,7 @@ Etapa 6 — Vue.js - frontend conectado al backend
         "mensaje": "Usuario creado correctamente",
         "uid": "kULPf8k7uDWdbXAVm7UFk1bCAon2"
     }
-14.4.-el resultado para el dueñlo sera:
+14.4.-el resultado para el dueño sera:
     {
         "mensaje": "Usuario creado correctamente",
         "uid": "7dEsTtmvYqXzigPqXQL2MPLCPqG3"
@@ -101,3 +105,44 @@ Etapa 6 — Vue.js - frontend conectado al backend
     creamos un nuevo documento "auth.middleware.js" en middleware
 16.1.- vamos a verificar los roles creando en la misma carpeta src/middleware
     creando el siguente archivo "roles.middleware.js"
+
+
+--------------------------------------------------------------------------
+
+Etapa 2 — Huertos - CRUD de huertos y asignación de trabajadores
+
+1.- Ahora creqamos el huertos.controller
+2.- Para este punbto vamos a crear el huertos.routes.js
+3.- Como anterior mente llamamos al Auth en el index ahora debemos hacer lo mismo para el el huerto:
+    app.use('/huertos', huertoRoutes);
+4.- Como vamos a probar esto?
+4.1.- Iniciamos sesion con el el usuario en el postman:
+    {
+        "email": "juan@gmail.com",
+        "password": "123456"
+    }
+4.2.- Copiamos el uid y lo agregamos en bearer token, luego vamos a la ruta
+    http://localhost:3000/huertos y agregamos un nuevo huerto:
+    {
+        "nombre": "Huerto Los Aromos",
+        "ubicacion": "Parral, Chile"
+    }
+5.- Para obtener los huertos creados vamos a la siguente ubicacion
+    GET http://localhost:3000/huertos
+6.- Para eliminar los huertos vamos a cambiar el metodo de get a Delete mantenemos el incio de la URL pero
+    agregamos el id del huerto creado, quedando asi la url http://localhost:3000/huertos/DvjevQ8bbq9jCLQ1bhir
+7.- Lo que nos toca crear a continuacion es agregar al trabajor a cada huerto
+    para ello vamos a agregar "asignarTrabajador" y "desasignarTrabajador" dentro de huertos.controller
+    finalmente para no tener errores exportamos los dos nuevos metodos en el module.export
+8.- Una vcez agregado debemos incluirlos en el huertos.routes para poder usar esos metodos
+    quedandonos de esta forma:
+        const { 
+            crearHuerto, 
+            obtenerHuertos, 
+            obtenerHuertoPorId, 
+            editarHuerto, 
+            eliminarHuerto,
+            asignarTrabajador,
+            desasignarTrabajador
+        } = require('../controllers/huertos.controller');
+9.-
