@@ -32,19 +32,27 @@
         <div class="modal-card">
           <h2>Asignar Trabajador</h2>
           <p class="huerto-nombre">Huerto: <strong>{{ huertoSeleccionado?.nombre }}</strong></p>
-          <div class="form-group">
-            <label>Selecciona un trabajador</label>
+
+          <div v-if="trabajadoresDisponibles.length === 0" class="vacio">
+            No hay trabajadores disponibles para asignar.
+          </div>
+
+          <div v-else class="form-group">
+            <label>Selecciona un trabajador disponible</label>
             <select v-model="formAsignar.trabajadorId">
               <option value="">-- Selecciona --</option>
-              <option v-for="t in trabajadores" :key="t.uid" :value="t.uid">
-                {{ t.nombre }}
+              <option v-for="t in trabajadoresDisponibles" :key="t.uid" :value="t.uid">
+                {{ t.nombre }} — {{ t.tipo_contrato === 'con_contrato' ? 'Con contrato' : 'Sin contrato' }}
               </option>
             </select>
           </div>
+
           <p v-if="error" class="error">{{ error }}</p>
           <div class="modal-actions">
             <button class="btn-secondary" @click="cerrarAsignar">Cancelar</button>
-            <button class="btn-primary" @click="asignarTrabajador">Asignar</button>
+            <button v-if="trabajadoresDisponibles.length > 0" class="btn-primary" @click="asignarTrabajador">
+              Asignar
+            </button>
           </div>
         </div>
       </div>
@@ -58,7 +66,7 @@
             <tr>
               <th>Nombre</th>
               <th>Ubicación</th>
-              <th>Trabajador activo</th>
+              <th>Trabajadores activos</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -67,26 +75,17 @@
               <td>{{ huerto.nombre }}</td>
               <td>{{ huerto.ubicacion }}</td>
               <td>
-                <span v-if="huerto.trabajadorActivoId" class="badge-activo">
-                  {{ nombreTrabajador(huerto.trabajadorActivoId) }}
-                </span>
+                <div v-if="huerto.trabajadoresActivos && huerto.trabajadoresActivos.length > 0">
+                  <span v-for="uid in huerto.trabajadoresActivos" :key="uid" class="badge-activo"
+                    style="display:block; margin-bottom: 0.3rem">
+                    {{ nombreTrabajador(uid) }}
+                    <button class="btn-desasignar" @click="desasignarTrabajador(huerto.id, uid)">X</button>
+                  </span>
+                </div>
                 <span v-else class="badge-libre">Libre</span>
               </td>
               <td class="acciones">
-                <button
-                  v-if="!huerto.trabajadorActivoId"
-                  class="btn-info"
-                  @click="abrirAsignar(huerto)"
-                >
-                  Asignar
-                </button>
-                <button
-                  v-else
-                  class="btn-secondary"
-                  @click="desasignarTrabajador(huerto.id)"
-                >
-                  Desasignar
-                </button>
+                <button class="btn-info" @click="abrirAsignar(huerto)">Asignar</button>
                 <button class="btn-danger" @click="eliminarHuerto(huerto.id)">Eliminar</button>
               </td>
             </tr>
@@ -102,7 +101,7 @@ import AppSidebar from '../../components/AppSidebar.vue';
 import { useHuertos } from '../../composables/useHuertos';
 
 const {
-  huertos, trabajadores, cargando,
+  huertos, trabajadores, trabajadoresDisponibles, cargando,
   mostrarFormulario, mostrarAsignar,
   huertoSeleccionado, error, form, formAsignar,
   cerrarFormulario, cerrarAsignar, abrirAsignar,
@@ -113,6 +112,13 @@ const {
 </script>
 
 <style scoped>
-.acciones { display: flex; gap: 0.5rem; }
-.huerto-nombre { margin-bottom: 1rem; color: #444; }
+.acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.huerto-nombre {
+  margin-bottom: 1rem;
+  color: #444;
+}
 </style>

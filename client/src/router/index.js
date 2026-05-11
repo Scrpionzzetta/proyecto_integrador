@@ -5,6 +5,7 @@ import HuertosView from '../views/huertos/HuertosView.vue';
 import TrabajadoresView from '../views/trabajadores/TrabajadoresView.vue';
 import PagosView from '../views/pagos/PagosView.vue';
 import TemporadasView from '../views/temporadas/TemporadasView.vue';
+import UsuariosView from '../views/usuarios/UsuariosView.vue';
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -18,6 +19,12 @@ const routes = [
     path: '/dashboard',
     name: 'dashboard',
     component: DashboardView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/usuarios',
+    name: 'usuarios',
+    component: UsuariosView,
     meta: { requiresAuth: true }
   },
   {

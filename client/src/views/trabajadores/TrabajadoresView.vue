@@ -4,10 +4,21 @@
     <main class="content">
       <div class="content-header">
         <h1>Trabajadores</h1>
-        <button class="btn-primary" @click="mostrarFormulario = true">Nuevo Trabajador</button>
+        <button class="btn-primary" @click="mostrarFormulario = true">+ Nuevo Trabajador</button>
       </div>
 
-      <!-- Formulario crear trabajador -->
+      <!-- Pestañas -->
+      <div class="pestanas">
+        <button :class="['btn-pestana', { activo: pestanaActiva === 'mis-trabajadores' }]"
+          @click="pestanaActiva = 'mis-trabajadores'">
+          Mis Trabajadores ({{ misTrabajadores?.length ?? 0 }})
+        </button>
+        <button :class="['btn-pestana', { activo: pestanaActiva === 'libres' }]" @click="pestanaActiva = 'libres'">
+          Buscar Trabajadores Libres ({{ trabajadoresLibres?.length ?? 0 }})
+        </button>
+      </div>
+
+      <!-- Modal crear trabajador -->
       <div v-if="mostrarFormulario" class="modal">
         <div class="modal-card">
           <h2>Registrar Trabajador</h2>
@@ -101,35 +112,81 @@
       </div>
 
       <div v-if="cargando" class="cargando">Cargando trabajadores...</div>
-      <div v-else-if="trabajadores.length === 0" class="vacio">No hay trabajadores registrados aún.</div>
 
-      <div v-else class="tabla-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Documento</th>
-              <th>Nacionalidad</th>
-              <th>Contrato</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="trabajador in trabajadores" :key="trabajador.uid">
-              <td>{{ trabajador.nombre }}</td>
-              <td>{{ trabajador.tipo_documento?.toUpperCase() }}: {{ trabajador.numero_documento }}</td>
-              <td>{{ trabajador.nacionalidad }}</td>
-              <td>
-                <span v-if="trabajador.tipo_contrato === 'con_contrato'" class="badge-contrato">Con contrato</span>
-                <span v-else class="badge-sin-contrato">Sin contrato</span>
-              </td>
-              <td class="acciones">
-                <button class="btn-info" @click="verFicha(trabajador.uid)">Ver ficha</button>
-                <button class="btn-danger" @click="eliminarTrabajador(trabajador.uid)">Eliminar</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Pestaña Mis Trabajadores -->
+      <div v-else-if="pestanaActiva === 'mis-trabajadores'">
+        <div v-if="misTrabajadores.length === 0" class="vacio">
+          No tienes trabajadores asignados a tus huertos aún.
+        </div>
+        <div v-else class="tabla-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Documento</th>
+                <th>Nacionalidad</th>
+                <th>Contrato</th>
+                <th>Huerto asignado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="trabajador in misTrabajadores" :key="trabajador.uid">
+                <td>{{ trabajador.nombre }}</td>
+                <td>{{ trabajador.tipo_documento?.toUpperCase() }}: {{ trabajador.numero_documento }}</td>
+                <td>{{ trabajador.nacionalidad }}</td>
+                <td>
+                  <span v-if="trabajador.tipo_contrato === 'con_contrato'" class="badge-contrato">Con contrato</span>
+                  <span v-else class="badge-sin-contrato">Sin contrato</span>
+                </td>
+                <td>
+                  <span v-for="huerto in trabajador.huertos" :key="huerto.huertoId" class="badge-activo"
+                    style="display:block; margin-bottom: 0.3rem">
+                    {{ huerto.huertoNombre }}
+                  </span>
+                </td>
+                <td class="acciones">
+                  <button class="btn-info" @click="verFicha(trabajador.uid)">Ver ficha</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pestaña Buscar Trabajadores Libres -->
+      <div v-else-if="pestanaActiva === 'libres'">
+        <div v-if="trabajadoresLibres.length === 0" class="vacio">
+          No hay trabajadores libres disponibles.
+        </div>
+        <div v-else class="tabla-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Documento</th>
+                <th>Nacionalidad</th>
+                <th>Contrato</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="trabajador in trabajadoresLibres" :key="trabajador.uid">
+                <td>{{ trabajador.nombre }}</td>
+                <td>{{ trabajador.tipo_documento?.toUpperCase() }}: {{ trabajador.numero_documento }}</td>
+                <td>{{ trabajador.nacionalidad }}</td>
+                <td>
+                  <span v-if="trabajador.tipo_contrato === 'con_contrato'" class="badge-contrato">Con contrato</span>
+                  <span v-else class="badge-sin-contrato">Sin contrato</span>
+                </td>
+                <td class="acciones">
+                  <button class="btn-info" @click="verFicha(trabajador.uid)">Ver ficha</button>
+                  <button class="btn-danger" @click="eliminarTrabajador(trabajador.uid)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </main>
   </div>
@@ -140,14 +197,47 @@ import AppSidebar from '../../components/AppSidebar.vue';
 import { useTrabajadores } from '../../composables/useTrabajadores';
 
 const {
-  trabajadores, cargando, mostrarFormulario, fichaSeleccionada,
-  error, form, cerrarFormulario, crearTrabajador, verFicha, eliminarTrabajador
+  misTrabajadores, trabajadoresLibres, cargando,
+  mostrarFormulario, fichaSeleccionada, error, form,
+  pestanaActiva, cerrarFormulario, crearTrabajador,
+  verFicha, eliminarTrabajador
 } = useTrabajadores();
 </script>
 
 <style scoped>
-.ficha-info p { margin-bottom: 0.5rem; }
-.ficha-info { margin-bottom: 1rem; }
+.pestanas {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-pestana {
+  padding: 0.7rem 1.2rem;
+  border: 2px solid #2d6a4f;
+  border-radius: 8px;
+  background: white;
+  color: #2d6a4f;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.btn-pestana:hover {
+  background-color: #d8f3dc;
+}
+
+.btn-pestana.activo {
+  background-color: #2d6a4f;
+  color: white;
+}
+
+.ficha-info p {
+  margin-bottom: 0.5rem;
+}
+
+.ficha-info {
+  margin-bottom: 1rem;
+}
 
 .ficha-stats {
   display: grid;
@@ -162,8 +252,19 @@ const {
   text-align: center;
 }
 
-.stat span { display: block; font-size: 0.85rem; color: #666; }
-.stat strong { font-size: 1.3rem; color: #2d6a4f; }
+.stat span {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+}
 
-.acciones { display: flex; gap: 0.5rem; }
+.stat strong {
+  font-size: 1.3rem;
+  color: #2d6a4f;
+}
+
+.acciones {
+  display: flex;
+  gap: 0.5rem;
+}
 </style>

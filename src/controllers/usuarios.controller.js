@@ -3,13 +3,25 @@ const { admin, db } = require('../config/firebase');
 
 const obtenerUsuarios = async (req, res) => {
   try {
-    const snapshot = await db.collection('usuarios').get();
+    let snapshot;
+
+    console.log('=== OBTENER HUERTOS ===');
+    console.log('Rol:', req.usuario.rol);
+    console.log('UID:', req.usuario.uid);
+
+    // Admin ve todos, dueño solo ve trabajadores
+    if (req.usuario.rol === 'admin') {
+      snapshot = await db.collection('usuarios').get();
+    } else {
+      snapshot = await db.collection('usuarios')
+        .where('rol', '==', 'trabajador')
+        .get();
+    }
 
     if (snapshot.empty) {
       return res.status(200).json([]);
     }
 
-    // Mapeamos los documentos, pero nunca devolvemos el password
     const usuarios = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()

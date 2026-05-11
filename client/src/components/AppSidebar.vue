@@ -7,6 +7,7 @@
     </div>
     <nav>
       <router-link to="/dashboard">Dashboard</router-link>
+      <router-link to="/usuarios">Usuarios</router-link>
       <router-link to="/huertos">Huertos</router-link>
       <router-link to="/temporadas">Temporadas</router-link>
       <router-link to="/trabajadores">Trabajadores</router-link>

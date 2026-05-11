@@ -40,15 +40,23 @@ const crearHuerto = async (req, res) => {
 // Obtenemos todos los huertos
 const obtenerHuertos = async (req, res) => {
   try {
-    // Obtenemos todos los documentos de la coleccion huertos
-    const snapshot = await db.collection('huertos').get();
+    let snapshot;
 
-    // Si no hay huertos retornamos un arreglo vacio
+    // Si es admin ve todos los huertos, si es dueño solo los suyos
+    if (req.usuario.rol === 'admin') {
+      snapshot = await db.collection('huertos').get();
+    } else {
+      snapshot = await db.collection('huertos')
+        .where('duenoId', '==', req.usuario.uid)
+        .get();
+    }
+
+    console.log('Huertos encontrados:', snapshot.size);
+
     if (snapshot.empty) {
       return res.status(200).json([]);
     }
 
-    // Mapeamos los documentos para devolver un arreglo con los datos
     const huertos = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -143,7 +151,6 @@ const asignarTrabajador = async (req, res) => {
   const { trabajadorId } = req.body;
 
   try {
-    // Validamos que venga el trabajadorId
     if (!trabajadorId) {
       return res.status(400).json({ error: 'El trabajadorId es obligatorio' });
     }
@@ -156,42 +163,38 @@ const asignarTrabajador = async (req, res) => {
 
     // Verificamos que el trabajador exista y sea del rol correcto
     const trabajadorDoc = await db.collection('usuarios').doc(trabajadorId).get();
-    if (!trabajadorDoc.exists) {
+    if (!trabajadorDoc.exists || trabajadorDoc.data().rol !== 'trabajador') {
       return res.status(404).json({ error: 'Trabajador no encontrado' });
     }
 
-    const trabajadorData = trabajadorDoc.data();
-    if (trabajadorData.rol !== 'trabajador') {
-      return res.status(400).json({ error: 'El usuario no es un trabajador' });
-    }
-
-    // Verificamos que el trabajador no este asignado a otro huerto
-    const huertoActivo = await db.collection('huertos')
-      .where('trabajadorActivoId', '==', trabajadorId)
-      .get();
-
-    if (!huertoActivo.empty) {
-      return res.status(400).json({ 
-        error: 'El trabajador ya esta asignado a otro huerto' 
-      });
-    }
-
-    // Verificamos que el huerto no tenga ya un trabajador asignado
     const huertoData = huertoDoc.data();
-    if (huertoData.trabajadorActivoId) {
-      return res.status(400).json({ 
-        error: 'El huerto ya tiene un trabajador asignado' 
+
+    // Verificamos que el trabajador no este ya asignado a este huerto
+    const trabajadoresActivos = huertoData.trabajadoresActivos || [];
+    if (trabajadoresActivos.includes(trabajadorId)) {
+      return res.status(400).json({ error: 'El trabajador ya está asignado a este huerto' });
+    }
+
+    // Verificamos que el trabajador no este en un huerto de otro dueño
+    const huertosSnapshot = await db.collection('huertos').get();
+    const huertoDeOtroDueno = huertosSnapshot.docs.find(doc => {
+      const data = doc.data();
+      const activos = data.trabajadoresActivos || [];
+      return activos.includes(trabajadorId) && data.duenoId !== huertoData.duenoId;
+    });
+
+    if (huertoDeOtroDueno) {
+      return res.status(400).json({
+        error: 'El trabajador está asignado a un huerto de otro dueño'
       });
     }
 
-    // Asignamos el trabajador al huerto
+    // Agregamos el trabajador al array
     await db.collection('huertos').doc(id).update({
-      trabajadorActivoId: trabajadorId
+      trabajadoresActivos: [...trabajadoresActivos, trabajadorId]
     });
 
-    return res.status(200).json({ 
-      mensaje: `Trabajador asignado correctamente al huerto` 
-    });
+    return res.status(200).json({ mensaje: 'Trabajador asignado correctamente' });
 
   } catch (error) {
     console.error('Error al asignar trabajador:', error);
@@ -202,30 +205,31 @@ const asignarTrabajador = async (req, res) => {
 // Vamosd a asignar trabajador a un huerto
 const desasignarTrabajador = async (req, res) => {
   const { id } = req.params;
+  const { trabajadorId } = req.body;
 
   try {
-    // Verificamos que el huerto exista
+    if (!trabajadorId) {
+      return res.status(400).json({ error: 'El trabajadorId es obligatorio' });
+    }
+
     const huertoDoc = await db.collection('huertos').doc(id).get();
     if (!huertoDoc.exists) {
       return res.status(404).json({ error: 'Huerto no encontrado' });
     }
 
-    // Verificamos que el huerto tenga un trabajador asignado
     const huertoData = huertoDoc.data();
-    if (!huertoData.trabajadorActivoId) {
-      return res.status(400).json({ 
-        error: 'El huerto no tiene un trabajador asignado' 
-      });
+    const trabajadoresActivos = huertoData.trabajadoresActivos || [];
+
+    if (!trabajadoresActivos.includes(trabajadorId)) {
+      return res.status(400).json({ error: 'El trabajador no está asignado a este huerto' });
     }
 
-    // Desasignamos el trabajador, volvemos a null
+    // Quitamos el trabajador del array
     await db.collection('huertos').doc(id).update({
-      trabajadorActivoId: null
+      trabajadoresActivos: trabajadoresActivos.filter(uid => uid !== trabajadorId)
     });
 
-    return res.status(200).json({ 
-      mensaje: 'Trabajador desasignado correctamente del huerto' 
-    });
+    return res.status(200).json({ mensaje: 'Trabajador desasignado correctamente' });
 
   } catch (error) {
     console.error('Error al desasignar trabajador:', error);
@@ -236,11 +240,11 @@ const desasignarTrabajador = async (req, res) => {
 //Antes
 //module.exports = { crearHuerto, obtenerHuertos, obtenerHuertoPorId, editarHuerto, eliminarHuerto };
 //Despues
-module.exports = { 
-  crearHuerto, 
-  obtenerHuertos, 
-  obtenerHuertoPorId, 
-  editarHuerto, 
+module.exports = {
+  crearHuerto,
+  obtenerHuertos,
+  obtenerHuertoPorId,
+  editarHuerto,
   eliminarHuerto,
   asignarTrabajador,
   desasignarTrabajador

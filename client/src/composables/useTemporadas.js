@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api from '../services/api';
 
 export function useTemporadas() {
@@ -6,14 +6,29 @@ export function useTemporadas() {
   const huertos = ref([]);
   const cargando = ref(true);
   const mostrarFormulario = ref(false);
+  const mostrarCierre = ref(false);         // ← nuevo
+  const temporadaACerrar = ref(null);        // ← nuevo
+  const fechaCierre = ref('');               // ← nuevo
   const error = ref('');
+  const errorCierre = ref('');              // ← nuevo
+  const anioFiltro = ref(new Date().getFullYear());
 
   const form = ref({
-    huertoId: '',
-    fruta: '',
-    fechaInicio: '',
-    precio_bandeja: '',
-    precio_granel: ''
+    huertoId: '', fruta: '', fechaInicio: '',
+    precio_bandeja: '', precio_granel: ''
+  });
+
+  const aniosDisponibles = computed(() => {
+    const anios = temporadas.value.map(t => t.anio).filter(Boolean);
+    const unicos = [...new Set(anios)].sort((a, b) => b - a);
+    if (!unicos.includes(new Date().getFullYear())) {
+      unicos.unshift(new Date().getFullYear());
+    }
+    return unicos;
+  });
+
+  const temporadasFiltradas = computed(() => {
+    return temporadas.value.filter(t => t.anio === anioFiltro.value);
   });
 
   const cerrarFormulario = () => {
@@ -23,6 +38,20 @@ export function useTemporadas() {
       huertoId: '', fruta: '', fechaInicio: '',
       precio_bandeja: '', precio_granel: ''
     };
+  };
+
+  const abrirCierre = (temporada) => {
+    temporadaACerrar.value = temporada;
+    fechaCierre.value = '';
+    errorCierre.value = '';
+    mostrarCierre.value = true;
+  };
+
+  const cerrarModalCierre = () => {
+    mostrarCierre.value = false;
+    temporadaACerrar.value = null;
+    fechaCierre.value = '';
+    errorCierre.value = '';
   };
 
   const cargarDatos = async () => {
@@ -44,8 +73,8 @@ export function useTemporadas() {
   const crearTemporada = async () => {
     error.value = '';
     try {
-      if (!form.value.huertoId || !form.value.fruta || 
-          !form.value.fechaInicio || !form.value.precio_bandeja || 
+      if (!form.value.huertoId || !form.value.fruta ||
+          !form.value.fechaInicio || !form.value.precio_bandeja ||
           !form.value.precio_granel) {
         error.value = 'Todos los campos son obligatorios';
         return;
@@ -62,13 +91,30 @@ export function useTemporadas() {
     }
   };
 
-  const cerrarTemporada = async (id) => {
-    if (!confirm('¿Cerrar esta temporada?')) return;
+  const cerrarTemporada = async () => {
+    errorCierre.value = '';
     try {
-      await api.put(`/temporadas/${id}/cerrar`);
+      if (!fechaCierre.value) {
+        errorCierre.value = 'La fecha de cierre es obligatoria';
+        return;
+      }
+      await api.put(`/temporadas/${temporadaACerrar.value.id}/cerrar`, {
+        fechaFin: fechaCierre.value
+      });
+      cerrarModalCierre();
       await cargarDatos();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al cerrar temporada');
+      errorCierre.value = err.response?.data?.error || 'Error al cerrar temporada';
+    }
+  };
+
+  const eliminarTemporada = async (id) => {
+    if (!confirm('¿Eliminar esta temporada?')) return;
+    try {
+      await api.delete(`/temporadas/${id}`);
+      await cargarDatos();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al eliminar temporada');
     }
   };
 
@@ -81,8 +127,11 @@ export function useTemporadas() {
 
   return {
     temporadas, huertos, cargando,
-    mostrarFormulario, error, form,
-    cerrarFormulario, crearTemporada,
-    cerrarTemporada, nombreHuerto
+    mostrarFormulario, mostrarCierre, temporadaACerrar,
+    fechaCierre, error, errorCierre, form,
+    anioFiltro, aniosDisponibles, temporadasFiltradas,
+    cerrarFormulario, abrirCierre, cerrarModalCierre,
+    crearTemporada, cerrarTemporada,
+    eliminarTemporada, nombreHuerto
   };
 }

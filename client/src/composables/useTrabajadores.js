@@ -2,11 +2,13 @@ import { ref, onMounted } from 'vue';
 import api from '../services/api';
 
 export function useTrabajadores() {
-  const trabajadores = ref([]);
+  const misTrabajadores = ref([]);
+  const trabajadoresLibres = ref([]);
   const cargando = ref(true);
   const mostrarFormulario = ref(false);
   const fichaSeleccionada = ref(null);
   const error = ref('');
+  const pestanaActiva = ref('mis-trabajadores');
 
   const form = ref({
     nombre: '', email: '', password: '', rol: 'trabajador',
@@ -24,11 +26,34 @@ export function useTrabajadores() {
     };
   };
 
+
+  /*
   const cargarTrabajadores = async () => {
     try {
       cargando.value = true;
-      const response = await api.get('/usuarios');
-      trabajadores.value = response.data.filter(u => u.rol === 'trabajador');
+      const [misRes, libresRes] = await Promise.all([
+        api.get('/trabajadores/mis-trabajadores'),
+        api.get('/trabajadores/libres')
+      ]);
+      misTrabajadores.value = misRes.data;
+      trabajadoresLibres.value = libresRes.data;
+    } catch (err) {
+      console.error('Error cargando trabajadores:', err);
+    } finally {
+      cargando.value = false;
+    }
+  };*/
+  const cargarTrabajadores = async () => {
+    try {
+      cargando.value = true;
+      const [misRes, libresRes] = await Promise.all([
+        api.get('/trabajadores/mis-trabajadores'),
+        api.get('/trabajadores/libres')
+      ]);
+      console.log('Mis trabajadores:', misRes.data);
+      console.log('Trabajadores libres:', libresRes.data);
+      misTrabajadores.value = misRes.data;
+      trabajadoresLibres.value = libresRes.data;
     } catch (err) {
       console.error('Error cargando trabajadores:', err);
     } finally {
@@ -44,6 +69,8 @@ export function useTrabajadores() {
       await cargarTrabajadores();
     } catch (err) {
       error.value = err.response?.data?.error || 'Error al registrar trabajador';
+      console.error('Error:', err.response?.data);
+      alert('Error:', err.response?.data);
     }
   };
 
@@ -69,15 +96,9 @@ export function useTrabajadores() {
   onMounted(cargarTrabajadores);
 
   return {
-    trabajadores,
-    cargando,
-    mostrarFormulario,
-    fichaSeleccionada,
-    error,
-    form,
-    cerrarFormulario,
-    crearTrabajador,
-    verFicha,
-    eliminarTrabajador
+    misTrabajadores, trabajadoresLibres, cargando,
+    mostrarFormulario, fichaSeleccionada, error, form,
+    pestanaActiva, cerrarFormulario, crearTrabajador,
+    verFicha, eliminarTrabajador, cargarTrabajadores
   };
 }

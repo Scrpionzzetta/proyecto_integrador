@@ -6,7 +6,8 @@ const {
     crearTemporada,
     obtenerTemporadas,
     obtenerTemporadaPorId,
-    cerrarTemporada
+    cerrarTemporada,
+    eliminarTemporada
 } = require('../controllers/temporadas.controller');
 
 // Todas las rutas requieren autenticacion
@@ -23,5 +24,8 @@ router.get('/:id', verificarRol('admin', 'dueño'), obtenerTemporadaPorId);
 
 // PUT /temporadas/:id/cerrar - cerrar temporada
 router.put('/:id/cerrar', verificarRol('admin', 'dueño'), cerrarTemporada);
+
+// DEWL /temporadas/:id - eliminar temporada cerrada
+router.delete('/:id', verificarRol('admin', 'dueño'), eliminarTemporada);
 
 module.exports = router;

@@ -13,7 +13,7 @@ const {
 router.use(verificarToken);
 
 // GET /usuarios - solo admin puede ver todos
-router.get('/', verificarRol('admin'), obtenerUsuarios);
+router.get('/', verificarRol('admin', 'dueño'), obtenerUsuarios);
 
 // GET /usuarios/:id - admin y dueño pueden ver uno
 router.get('/:id', verificarRol('admin', 'dueño'), obtenerUsuarioPorId);
@@ -22,6 +22,6 @@ router.get('/:id', verificarRol('admin', 'dueño'), obtenerUsuarioPorId);
 router.put('/:id', verificarRol('admin'), editarUsuario);
 
 // DELETE /usuarios/:id - solo admin puede eliminar
-router.delete('/:id', verificarRol('admin'), eliminarUsuario);
+router.delete('/:id', verificarRol('admin', 'dueño'), eliminarUsuario);
 
 module.exports = router;
