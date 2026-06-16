@@ -10,6 +10,7 @@ import VentasView from '../views/ventas/VentasView.vue';
 import CompradoresView from '../views/compradores/CompradoresView.vue';
 import ReportesView from '../views/reportes/ReportesView.vue';
 import ReporteTemporadaView from '../views/reportes/ReporteTemporadaView.vue';
+import RecoleccionesView from '../views/recolecciones/RecoleccionesView.vue';
 
 
 
@@ -79,6 +80,12 @@ const routes = [
     path: '/reporte-temporada',
     name: 'reporte-temporada',
     component: ReporteTemporadaView,
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/recolecciones',
+    name: 'recolecciones',
+    component: RecoleccionesView,
     meta: { requiresAuth: true }
   }
 ];

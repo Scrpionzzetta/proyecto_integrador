@@ -1,13 +1,13 @@
-<template>
+  <template>
   <div class="layout">
     <AppSidebar />
     <main class="content">
-      <h1>Bienvenido, {{ authStore.usuario?.nombre }}</h1>
+      <h1>Bienvenido, Señor(a) {{ authStore.usuario?.nombre }}</h1>
       <p class="fecha">{{ fechaHoy }}</p>
 
       <div class="cards">
         <div class="card">
-          <h3>Huertos</h3>
+          <h3>Huertos {{ totales.huertos }}</h3>
           <p class="card-numero">{{ totales.huertos }}</p>
         </div>
         <div class="card">
@@ -27,6 +27,8 @@
     </main>
   </div>
 </template>
+
+
 
 <script setup>
 import { ref, onMounted } from 'vue';

@@ -1,6 +1,6 @@
 /*
 //-----------------------------------
-//Llamaremos a expres de la siguente forma/(Recordar que estamos usando un frasmewok)
+//Llamaremos a expres de la siguente forma/(Recordar que estamos usando un framework)
 const express = require('express');
 //LLamamos un metodo de express, el cual es app, este nos va a servir para cuando se hagan peticiones GET a la ruta raiz
 const app = express();
