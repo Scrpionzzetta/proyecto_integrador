@@ -14,7 +14,7 @@ router.use(verificarToken);
 router.get('/', verificarRol('admin', 'dueño'), obtenerUsuarios);
 router.get('/:id', verificarRol('admin', 'dueño'), obtenerUsuarioPorId);
 router.put('/:id', verificarRol('admin'), editarUsuario);
-router.delete('/:id', verificarRol('admin', 'dueño'), eliminarUsuario);
+router.delete('/:id', verificarRol('admin'), eliminarUsuario);
 router.put('/:id/desactivar', verificarRol('admin', 'dueño'), desactivarUsuario);
 
 module.exports = router;

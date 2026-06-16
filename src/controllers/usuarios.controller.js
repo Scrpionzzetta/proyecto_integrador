@@ -1,27 +1,34 @@
-// Importamos admin y db desde firebase
 const { admin, db } = require('../config/firebase');
 
 const obtenerUsuarios = async (req, res) => {
   try {
-    let snapshot;
-    console.log('=== OBTENER HUERTOS ===');
-    console.log('Rol:', req.usuario.rol);
-    console.log('UID:', req.usuario.uid);
     if (req.usuario.rol === 'admin') {
-      snapshot = await db.collection('usuarios').get();
-    } else {
-      snapshot = await db.collection('usuarios')
-        .where('rol', '==', 'trabajador')
-        .get();
+      const snapshot = await db.collection('usuarios').get();
+      const usuarios = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return res.status(200).json(usuarios);
     }
-    if (snapshot.empty) {
+
+    const huertosSnapshot = await db.collection('huertos')
+      .where('duenoId', '==', req.usuario.uid)
+      .get();
+
+    const idsTrabajadores = new Set();
+    huertosSnapshot.docs.forEach(doc => {
+      (doc.data().trabajadoresActivos || []).forEach(uid => idsTrabajadores.add(uid));
+    });
+
+    if (idsTrabajadores.size === 0) {
       return res.status(200).json([]);
     }
-    const usuarios = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    return res.status(200).json(usuarios);
+
+    const usuarios = await Promise.all(
+      Array.from(idsTrabajadores).map(async uid => {
+        const doc = await db.collection('usuarios').doc(uid).get();
+        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+      })
+    );
+
+    return res.status(200).json(usuarios.filter(Boolean));
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -35,9 +42,26 @@ const obtenerUsuarioPorId = async (req, res) => {
     if (!usuarioDoc.exists) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+    const usuarioData = usuarioDoc.data();
+
+    if (req.usuario.rol !== 'admin' && id !== req.usuario.uid) {
+      if (usuarioData.rol !== 'trabajador') {
+        return res.status(403).json({ error: 'No tienes acceso a este usuario' });
+      }
+      const huertosSnapshot = await db.collection('huertos')
+        .where('duenoId', '==', req.usuario.uid)
+        .get();
+      const esSuyo = huertosSnapshot.docs.some(doc =>
+        (doc.data().trabajadoresActivos || []).includes(id)
+      );
+      if (!esSuyo) {
+        return res.status(403).json({ error: 'No tienes acceso a este usuario' });
+      }
+    }
+
     return res.status(200).json({
       id: usuarioDoc.id,
-      ...usuarioDoc.data()
+      ...usuarioData
     });
   } catch (error) {
     console.error('Error al obtener usuario:', error);
@@ -73,10 +97,12 @@ const editarUsuario = async (req, res) => {
   }
 };
 
-
 const eliminarUsuario = async (req, res) => {
   const { id } = req.params;
   try {
+    if (req.usuario.rol !== 'admin') {
+      return res.status(403).json({ error: 'Solo el administrador puede eliminar cuentas' });
+    }
     const usuarioDoc = await db.collection('usuarios').doc(id).get();
     if (!usuarioDoc.exists) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -107,6 +133,19 @@ const desactivarUsuario = async (req, res) => {
     if (usuarioData.rol !== 'trabajador') {
       return res.status(400).json({ error: 'Solo se pueden desactivar trabajadores' });
     }
+
+    if (req.usuario.rol !== 'admin') {
+      const huertosSnapshot = await db.collection('huertos')
+        .where('duenoId', '==', req.usuario.uid)
+        .get();
+      const esSuyo = huertosSnapshot.docs.some(doc =>
+        (doc.data().trabajadoresActivos || []).includes(id)
+      );
+      if (!esSuyo) {
+        return res.status(403).json({ error: 'Este trabajador no está activo en ninguno de tus huertos' });
+      }
+    }
+
     await db.collection('usuarios').doc(id).update({
       activo: false,
       desactivadoEn: new Date().toISOString()

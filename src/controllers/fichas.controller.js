@@ -13,7 +13,7 @@ const obtenerFicha = async (req, res) => {
       return res.status(400).json({ error: 'El usuario no es un trabajador' });
     }
     const huertosSnapshot = await db.collection('huertos')
-      .where('trabajadorActivoId', '==', trabajadorId)
+      .where('trabajadoresActivos', 'array-contains', trabajadorId)
       .get();
     const huertos = huertosSnapshot.docs.map(doc => ({
       id: doc.id,

@@ -1,4 +1,5 @@
 const { db } = require('../config/firebase');
+
 const crearHuerto = async (req, res) => {
   const { nombre, ubicacion } = req.body;
   try {
@@ -22,6 +23,7 @@ const crearHuerto = async (req, res) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 const obtenerHuertos = async (req, res) => {
   try {
     let snapshot;
@@ -32,7 +34,6 @@ const obtenerHuertos = async (req, res) => {
         .where('duenoId', '==', req.usuario.uid)
         .get();
     }
-    console.log('Huertos encontrados:', snapshot.size);
     if (snapshot.empty) {
       return res.status(200).json([]);
     }
@@ -41,12 +42,12 @@ const obtenerHuertos = async (req, res) => {
       ...doc.data()
     }));
     return res.status(200).json(huertos);
-
   } catch (error) {
     console.error('Error al obtener huertos:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 const obtenerHuertoPorId = async (req, res) => {
   const { id } = req.params;
   try {
@@ -54,15 +55,22 @@ const obtenerHuertoPorId = async (req, res) => {
     if (!huertoDoc.exists) {
       return res.status(404).json({ error: 'Huerto no encontrado' });
     }
+    const huertoData = huertoDoc.data();
+
+    if (req.usuario.rol !== 'admin' && huertoData.duenoId !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No tienes acceso a este huerto' });
+    }
+
     return res.status(200).json({
       id: huertoDoc.id,
-      ...huertoDoc.data()
+      ...huertoData
     });
   } catch (error) {
     console.error('Error al obtener huerto:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 const editarHuerto = async (req, res) => {
   const { id } = req.params;
   const { nombre, ubicacion } = req.body;
@@ -71,6 +79,12 @@ const editarHuerto = async (req, res) => {
     if (!huertoDoc.exists) {
       return res.status(404).json({ error: 'Huerto no encontrado' });
     }
+    const huertoData = huertoDoc.data();
+
+    if (req.usuario.rol !== 'admin' && huertoData.duenoId !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No puedes editar este huerto' });
+    }
+
     const datosActualizados = {};
     if (nombre) datosActualizados.nombre = nombre;
     if (ubicacion) datosActualizados.ubicacion = ubicacion;
@@ -81,9 +95,9 @@ const editarHuerto = async (req, res) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 const eliminarHuerto = async (req, res) => {
   const { id } = req.params;
-
   try {
     const huertoDoc = await db.collection('huertos').doc(id).get();
     if (!huertoDoc.exists) {
@@ -96,6 +110,7 @@ const eliminarHuerto = async (req, res) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 const asignarTrabajador = async (req, res) => {
   const { id } = req.params;
   const { trabajadorId } = req.body;
@@ -107,11 +122,16 @@ const asignarTrabajador = async (req, res) => {
     if (!huertoDoc.exists) {
       return res.status(404).json({ error: 'Huerto no encontrado' });
     }
+    const huertoData = huertoDoc.data();
+
+    if (req.usuario.rol !== 'admin' && huertoData.duenoId !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No puedes asignar trabajadores a este huerto' });
+    }
+
     const trabajadorDoc = await db.collection('usuarios').doc(trabajadorId).get();
     if (!trabajadorDoc.exists || trabajadorDoc.data().rol !== 'trabajador') {
       return res.status(404).json({ error: 'Trabajador no encontrado' });
     }
-    const huertoData = huertoDoc.data();
     const trabajadoresActivos = huertoData.trabajadoresActivos || [];
     if (trabajadoresActivos.includes(trabajadorId)) {
       return res.status(400).json({ error: 'El trabajador ya está asignado a este huerto' });
@@ -149,6 +169,11 @@ const desasignarTrabajador = async (req, res) => {
       return res.status(404).json({ error: 'Huerto no encontrado' });
     }
     const huertoData = huertoDoc.data();
+
+    if (req.usuario.rol !== 'admin' && huertoData.duenoId !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No puedes desasignar trabajadores de este huerto' });
+    }
+
     const trabajadoresActivos = huertoData.trabajadoresActivos || [];
     if (!trabajadoresActivos.includes(trabajadorId)) {
       return res.status(400).json({ error: 'El trabajador no está asignado a este huerto' });
@@ -162,6 +187,7 @@ const desasignarTrabajador = async (req, res) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 module.exports = {
   crearHuerto,
   obtenerHuertos,

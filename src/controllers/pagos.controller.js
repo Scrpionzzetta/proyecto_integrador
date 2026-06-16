@@ -1,23 +1,24 @@
-// Importamos db desde firebase
 const { db } = require('../config/firebase');
+
 const calcularPago = async (req, res) => {
   const { trabajadorId, huertoId, temporadaId, periodo, fechaInicio, fechaFin } = req.body;
   try {
     if (!trabajadorId || !huertoId || !temporadaId || !periodo || !fechaInicio || !fechaFin) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
-
     const periodosPermitidos = ['quincenal', 'mensual'];
     if (!periodosPermitidos.includes(periodo)) {
       return res.status(400).json({ error: 'Periodo debe ser quincenal o mensual' });
     }
-
     const temporadaDoc = await db.collection('temporadas').doc(temporadaId).get();
     if (!temporadaDoc.exists) {
       return res.status(404).json({ error: 'Temporada no encontrada' });
     }
-
     const temporadaData = temporadaDoc.data();
+
+    if (req.usuario.rol !== 'admin' && temporadaData.creadoPor !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No tienes acceso a esta temporada' });
+    }
 
     const snapshot = await db.collection('recolecciones')
       .where('trabajadorId', '==', trabajadorId)
@@ -26,10 +27,7 @@ const calcularPago = async (req, res) => {
       .get();
 
     if (snapshot.empty) {
-      return res.status(200).json({
-        mensaje: 'No hay recolecciones en este periodo',
-        total: 0
-      });
+      return res.status(200).json({ mensaje: 'No hay recolecciones en este periodo', total: 0 });
     }
     const recolecciones = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -39,10 +37,7 @@ const calcularPago = async (req, res) => {
       });
 
     if (recolecciones.length === 0) {
-      return res.status(200).json({
-        mensaje: 'No hay recolecciones en este periodo',
-        total: 0
-      });
+      return res.status(200).json({ mensaje: 'No hay recolecciones en este periodo', total: 0 });
     }
 
     let totalBandejas = 0;
@@ -82,6 +77,7 @@ const calcularPago = async (req, res) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 const registrarPago = async (req, res) => {
   const { trabajadorId, huertoId, temporadaId, periodo, fechaInicio, fechaFin, monto } = req.body;
 
@@ -93,6 +89,17 @@ const registrarPago = async (req, res) => {
     if (!trabajadorDoc.exists) {
       return res.status(404).json({ error: 'Trabajador no encontrado' });
     }
+
+    const temporadaDoc = await db.collection('temporadas').doc(temporadaId).get();
+    if (!temporadaDoc.exists) {
+      return res.status(404).json({ error: 'Temporada no encontrada' });
+    }
+    const temporadaData = temporadaDoc.data();
+
+    if (req.usuario.rol !== 'admin' && temporadaData.creadoPor !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No puedes registrar pagos en esta temporada' });
+    }
+
     const nuevoPago = {
       trabajadorId,
       huertoId,
@@ -120,7 +127,14 @@ const registrarPago = async (req, res) => {
 
 const obtenerPagos = async (req, res) => {
   try {
-    const snapshot = await db.collection('pagos').get();
+    let snapshot;
+    if (req.usuario.rol === 'admin') {
+      snapshot = await db.collection('pagos').get();
+    } else {
+      snapshot = await db.collection('pagos')
+        .where('pagadoPor', '==', req.usuario.uid)
+        .get();
+    }
     if (snapshot.empty) {
       return res.status(200).json([]);
     }
@@ -134,12 +148,15 @@ const obtenerPagos = async (req, res) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 const obtenerPagosPorTrabajador = async (req, res) => {
   const { trabajadorId } = req.params;
   try {
-    const snapshot = await db.collection('pagos')
-      .where('trabajadorId', '==', trabajadorId)
-      .get();
+    let query = db.collection('pagos').where('trabajadorId', '==', trabajadorId);
+    if (req.usuario.rol !== 'admin') {
+      query = query.where('pagadoPor', '==', req.usuario.uid);
+    }
+    const snapshot = await query.get();
     if (snapshot.empty) {
       return res.status(200).json([]);
     }

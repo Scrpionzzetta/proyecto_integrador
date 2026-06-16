@@ -65,6 +65,12 @@ const eliminarVenta = async (req, res) => {
     if (!ventaDoc.exists) {
       return res.status(404).json({ error: 'Venta no encontrada' });
     }
+    const ventaData = ventaDoc.data();
+
+    if (req.usuario.rol !== 'admin' && ventaData.duenoId !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No puedes eliminar esta venta' });
+    }
+
     await db.collection('ventas').doc(id).delete();
     return res.status(200).json({ mensaje: 'Venta eliminada correctamente' });
   } catch (error) {

@@ -60,6 +60,12 @@ const eliminarComprador = async (req, res) => {
     if (!compradorDoc.exists) {
       return res.status(404).json({ error: 'Comprador no encontrado' });
     }
+    const compradorData = compradorDoc.data();
+
+    if (req.usuario.rol !== 'admin' && compradorData.duenoId !== req.usuario.uid) {
+      return res.status(403).json({ error: 'No puedes eliminar este comprador' });
+    }
+
     await db.collection('compradores').doc(id).delete();
     return res.status(200).json({ mensaje: 'Comprador eliminado correctamente' });
   } catch (error) {

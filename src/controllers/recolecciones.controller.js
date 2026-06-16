@@ -29,10 +29,18 @@ const registrarRecoleccion = async (req, res) => {
     }
     const huertoData = huertoDoc.data();
     if (huertoData.trabajadorActivoId !== trabajadorId) {
-      return res.status(400).json({ 
-        error: 'El trabajador no esta asignado a este huerto' 
+      return res.status(400).json({
+        error: 'El trabajador no esta asignado a este huerto'
       });
     }
+
+    //Agregardo, probar wfix
+    const trabajadoresActivos = huertoData.trabajadoresActivos || [];
+    if (!trabajadoresActivos.includes(trabajadorId)) {
+      return res.status(400).json({ error: 'El trabajador no esta asignado a este huerto' });
+    }
+
+
     const temporadaDoc = await db.collection('temporadas').doc(temporadaId).get();
     if (!temporadaDoc.exists) {
       return res.status(404).json({ error: 'Temporada no encontrada' });
@@ -44,8 +52,8 @@ const registrarRecoleccion = async (req, res) => {
     }
 
     if (temporadaData.huertoId !== huertoId) {
-      return res.status(400).json({ 
-        error: 'La temporada no pertenece a este huerto' 
+      return res.status(400).json({
+        error: 'La temporada no pertenece a este huerto'
       });
     }
 
@@ -127,9 +135,9 @@ const obtenerRecoleccionesPorTemporada = async (req, res) => {
   }
 };
 
-module.exports = { 
-  registrarRecoleccion, 
-  obtenerRecolecciones, 
+module.exports = {
+  registrarRecoleccion,
+  obtenerRecolecciones,
   obtenerRecoleccionesPorTrabajador,
   obtenerRecoleccionesPorTemporada
 };
