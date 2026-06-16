@@ -1,22 +1,17 @@
 // Importamos db desde firebase
 const { db } = require('../config/firebase');
-
 const calcularPago = async (req, res) => {
   const { trabajadorId, huertoId, temporadaId, periodo, fechaInicio, fechaFin } = req.body;
-
   try {
-    // Validamos que vengan todos los datos
     if (!trabajadorId || !huertoId || !temporadaId || !periodo || !fechaInicio || !fechaFin) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
 
-    // Solo se permiten estos dos periodos
     const periodosPermitidos = ['quincenal', 'mensual'];
     if (!periodosPermitidos.includes(periodo)) {
       return res.status(400).json({ error: 'Periodo debe ser quincenal o mensual' });
     }
 
-    // Verificamos que la temporada exista y obtengamos los precios
     const temporadaDoc = await db.collection('temporadas').doc(temporadaId).get();
     if (!temporadaDoc.exists) {
       return res.status(404).json({ error: 'Temporada no encontrada' });
@@ -24,7 +19,6 @@ const calcularPago = async (req, res) => {
 
     const temporadaData = temporadaDoc.data();
 
-    // Obtenemos las recolecciones del trabajador en el periodo indicado
     const snapshot = await db.collection('recolecciones')
       .where('trabajadorId', '==', trabajadorId)
       .where('huertoId', '==', huertoId)
@@ -37,11 +31,6 @@ const calcularPago = async (req, res) => {
         total: 0
       });
     }
-
-    // Filtramos las recolecciones por el rango de fechas
-    //const fechaInicioDate = new Date(fechaInicio);
-    //const fechaFinDate = new Date(fechaFin);
-
     const recolecciones = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(r => {
@@ -56,7 +45,6 @@ const calcularPago = async (req, res) => {
       });
     }
 
-    // Calculamos el total separando bandejas y granel
     let totalBandejas = 0;
     let totalGranel = 0;
     let montoBandejas = 0;
@@ -71,9 +59,7 @@ const calcularPago = async (req, res) => {
         montoGranel += r.cantidad * temporadaData.precio_granel;
       }
     });
-
     const totalMonto = montoBandejas + montoGranel;
-
     return res.status(200).json({
       trabajadorId,
       huertoId,
@@ -91,29 +77,22 @@ const calcularPago = async (req, res) => {
         totalAPagar: totalMonto
       }
     });
-
   } catch (error) {
     console.error('Error al calcular pago:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
-
 const registrarPago = async (req, res) => {
   const { trabajadorId, huertoId, temporadaId, periodo, fechaInicio, fechaFin, monto } = req.body;
 
   try {
-    // Validamos que vengan todos los datos
     if (!trabajadorId || !huertoId || !temporadaId || !periodo || !fechaInicio || !fechaFin || !monto) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
-
-    // Verificamos que el trabajador exista
     const trabajadorDoc = await db.collection('usuarios').doc(trabajadorId).get();
     if (!trabajadorDoc.exists) {
       return res.status(404).json({ error: 'Trabajador no encontrado' });
     }
-
-    // Construimos el objeto del pago
     const nuevoPago = {
       trabajadorId,
       huertoId,
@@ -126,8 +105,6 @@ const registrarPago = async (req, res) => {
       pagadoPor: req.usuario.uid,
       fechaPago: new Date().toISOString()
     };
-
-    // Guardamos en Firestore
     const pagoRef = await db.collection('pagos').add(nuevoPago);
 
     return res.status(201).json({
@@ -144,43 +121,33 @@ const registrarPago = async (req, res) => {
 const obtenerPagos = async (req, res) => {
   try {
     const snapshot = await db.collection('pagos').get();
-
     if (snapshot.empty) {
       return res.status(200).json([]);
     }
-
     const pagos = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
-
     return res.status(200).json(pagos);
-
   } catch (error) {
     console.error('Error al obtener pagos:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
-
 const obtenerPagosPorTrabajador = async (req, res) => {
   const { trabajadorId } = req.params;
-
   try {
     const snapshot = await db.collection('pagos')
       .where('trabajadorId', '==', trabajadorId)
       .get();
-
     if (snapshot.empty) {
       return res.status(200).json([]);
     }
-
     const pagos = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
-
     return res.status(200).json(pagos);
-
   } catch (error) {
     console.error('Error al obtener pagos por trabajador:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
