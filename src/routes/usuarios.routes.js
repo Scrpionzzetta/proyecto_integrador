@@ -7,7 +7,8 @@ const {
   obtenerUsuarioPorId,
   editarUsuario,
   eliminarUsuario,
-  desactivarUsuario
+  desactivarUsuario,
+  activarUsuario
 } = require('../controllers/usuarios.controller');
 
 router.use(verificarToken);
@@ -16,5 +17,6 @@ router.get('/:id', verificarRol('admin', 'dueño'), obtenerUsuarioPorId);
 router.put('/:id', verificarRol('admin'), editarUsuario);
 router.delete('/:id', verificarRol('admin'), eliminarUsuario);
 router.put('/:id/desactivar', verificarRol('admin', 'dueño'), desactivarUsuario);
+router.put('/:id/activar', verificarRol('admin'), activarUsuario);
 
 module.exports = router;

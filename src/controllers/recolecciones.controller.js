@@ -1,4 +1,3 @@
-// Importamos db desde firebase
 const { db } = require('../config/firebase');
 
 const registrarRecoleccion = async (req, res) => {
@@ -8,12 +7,10 @@ const registrarRecoleccion = async (req, res) => {
     if (!trabajadorId || !huertoId || !temporadaId || !tipo || !cantidad) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
-
     const tiposPermitidos = ['bandeja', 'granel'];
     if (!tiposPermitidos.includes(tipo)) {
       return res.status(400).json({ error: 'Tipo debe ser bandeja o granel' });
     }
-
     if (cantidad <= 0) {
       return res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
     }
@@ -28,44 +25,38 @@ const registrarRecoleccion = async (req, res) => {
       return res.status(404).json({ error: 'Huerto no encontrado' });
     }
     const huertoData = huertoDoc.data();
-    if (huertoData.trabajadorActivoId !== trabajadorId) {
-      return res.status(400).json({
-        error: 'El trabajador no esta asignado a este huerto'
-      });
-    }
 
-    //Agregardo, probar wfix
     const trabajadoresActivos = huertoData.trabajadoresActivos || [];
     if (!trabajadoresActivos.includes(trabajadorId)) {
       return res.status(400).json({ error: 'El trabajador no esta asignado a este huerto' });
     }
 
-
     const temporadaDoc = await db.collection('temporadas').doc(temporadaId).get();
     if (!temporadaDoc.exists) {
       return res.status(404).json({ error: 'Temporada no encontrada' });
     }
-
     const temporadaData = temporadaDoc.data();
+
     if (temporadaData.estado !== 'activa') {
       return res.status(400).json({ error: 'La temporada no esta activa' });
     }
-
     if (temporadaData.huertoId !== huertoId) {
-      return res.status(400).json({
-        error: 'La temporada no pertenece a este huerto'
-      });
+      return res.status(400).json({ error: 'La temporada no pertenece a este huerto' });
     }
 
     const nuevaRecoleccion = {
       trabajadorId,
       huertoId,
       temporadaId,
-      tipo,           // bandeja o granel
-      cantidad,       // numero de bandejas o kilos
+      tipo,
+      cantidad,
+      precioVigente: tipo === 'bandeja'
+        ? temporadaData.precio_bandeja
+        : temporadaData.precio_granel,
       fecha: new Date().toISOString(),
       registradoPor: req.usuario.uid
     };
+
     const recoleccionRef = await db.collection('recolecciones').add(nuevaRecoleccion);
     return res.status(201).json({
       mensaje: 'Recoleccion registrada correctamente',

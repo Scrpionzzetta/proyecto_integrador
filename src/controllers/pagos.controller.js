@@ -48,10 +48,10 @@ const calcularPago = async (req, res) => {
     recolecciones.forEach(r => {
       if (r.tipo === 'bandeja') {
         totalBandejas += r.cantidad;
-        montoBandejas += r.cantidad * temporadaData.precio_bandeja;
+        montoBandejas += r.cantidad * (r.precioVigente ?? temporadaData.precio_bandeja);
       } else if (r.tipo === 'granel') {
         totalGranel += r.cantidad;
-        montoGranel += r.cantidad * temporadaData.precio_granel;
+        montoGranel += r.cantidad * (r.precioVigente ?? temporadaData.precio_granel);
       }
     });
     const totalMonto = montoBandejas + montoGranel;

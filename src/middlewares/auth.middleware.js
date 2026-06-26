@@ -1,4 +1,5 @@
 const { admin, db } = require('../config/firebase');
+
 const verificarToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
 
@@ -11,7 +12,14 @@ const verificarToken = async (req, res, next) => {
     if (!usuarioDoc.exists) {
       return res.status(401).json({ error: 'Token inválido' });
     }
-    req.usuario = usuarioDoc.data();
+    const usuarioData = usuarioDoc.data();
+
+    // Si la cuenta está desactivada, bloqueamos sin importar el rol
+    if (usuarioData.activo === false) {
+      return res.status(403).json({ error: 'Cuenta desactivada. Contacta al administrador.' });
+    }
+
+    req.usuario = usuarioData;
     next();
   } catch (error) {
     console.error('Error verificando token:', error);

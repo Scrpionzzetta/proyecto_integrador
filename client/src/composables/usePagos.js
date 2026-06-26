@@ -12,8 +12,12 @@ export function usePagos() {
   const error = ref('');
 
   const form = ref({
-    trabajadorId: '', huertoId: '', temporadaId: '',
-    periodo: 'quincenal', fechaInicio: '', fechaFin: ''
+    trabajadorId: '',
+    huertoId: '',
+    temporadaId: '',
+    periodo: 'quincenal',
+    fechaInicio: '',
+    fechaFin: ''
   });
 
   const cerrarCalculador = () => {
@@ -21,56 +25,103 @@ export function usePagos() {
     resultado.value = null;
     error.value = '';
     form.value = {
-      trabajadorId: '', huertoId: '', temporadaId: '',
-      periodo: 'quincenal', fechaInicio: '', fechaFin: ''
+      trabajadorId: '',
+      huertoId: '',
+      temporadaId: '',
+      periodo: 'quincenal',
+      fechaInicio: '',
+      fechaFin: ''
     };
   };
 
+  // ── Helpers de nombre ──────────────────────────────────────
   const nombreTrabajador = (uid) => {
     const t = trabajadores.value.find(t => t.uid === uid);
     return t ? t.nombre : uid;
   };
 
+  const nombreHuerto = (id) => {
+    const h = huertos.value.find(h => h.id === id);
+    return h ? h.nombre : id;
+  };
+
+  const nombreTemporada = (id) => {
+    const t = temporadas.value.find(t => t.id === id);
+    return t ? `${t.fruta} (${t.anio})` : id;
+  };
+
+  // ── Carga inicial ──────────────────────────────────────────
+  // Solo cargamos trabajadores que son los cosecheros del productor
+  // (los que tiene asignados en sus huertos), no todos los usuarios
   const cargarDatos = async () => {
     try {
       cargando.value = true;
-      const [pagosRes, usuariosRes, huertosRes, temporadasRes] = await Promise.all([
+      const [pagosRes, misTrabajadoresRes, huertosRes, temporadasRes] = await Promise.all([
         api.get('/pagos'),
-        api.get('/usuarios'),
+        api.get('/trabajadores/mis-trabajadores'),  // solo los suyos (RF12)
         api.get('/huertos'),
         api.get('/temporadas')
       ]);
-      pagos.value = pagosRes.data;
-      trabajadores.value = usuariosRes.data.filter(u => u.rol === 'trabajador');
+      pagos.value = pagosRes.data.sort(
+        (a, b) => new Date(b.fechaPago) - new Date(a.fechaPago)
+      );
+      trabajadores.value = misTrabajadoresRes.data;
       huertos.value = huertosRes.data;
       temporadas.value = temporadasRes.data;
     } catch (err) {
-      console.error('Error cargando datos:', err);
+      console.error('Error cargando datos de pagos:', err);
     } finally {
       cargando.value = false;
     }
   };
 
+  // ── Listas filtradas para el formulario ───────────────────
+  // Cuando el usuario elige un huerto, filtramos los cosecheros
+  // asignados a ese huerto y la temporada activa del mismo (RF14/RF16)
+  const trabajadoresDelHuerto = (huertoId) => {
+    if (!huertoId) return [];
+    const huerto = huertos.value.find(h => h.id === huertoId);
+    if (!huerto) return [];
+    const activos = huerto.trabajadoresActivos || [];
+    return trabajadores.value.filter(t => activos.includes(t.uid));
+  };
+
+  const temporadasDelHuerto = (huertoId) => {
+    if (!huertoId) return [];
+    return temporadas.value.filter(
+      t => t.huertoId === huertoId && t.estado === 'activa'
+    );
+  };
+
+  // ── Calcular pago (RF16) ──────────────────────────────────
   const calcularPago = async () => {
     error.value = '';
     resultado.value = null;
     try {
-      if (!form.value.trabajadorId || !form.value.huertoId ||
-        !form.value.temporadaId || !form.value.fechaInicio || !form.value.fechaFin) {
+      const { trabajadorId, huertoId, temporadaId, periodo, fechaInicio, fechaFin } = form.value;
+      if (!trabajadorId || !huertoId || !temporadaId || !fechaInicio || !fechaFin) {
         error.value = 'Todos los campos son obligatorios';
         return;
       }
+      if (fechaInicio > fechaFin) {
+        error.value = 'La fecha de inicio no puede ser posterior a la fecha de fin';
+        return;
+      }
       const response = await api.post('/pagos/calcular', form.value);
-      console.log('Respuesta backend:', response.data);
       resultado.value = response.data;
     } catch (err) {
-      console.log('Error completo:', err.response);
       error.value = err.response?.data?.error || 'Error al calcular pago';
     }
   };
 
+  // ── Registrar pago (RF16) ─────────────────────────────────
   const registrarPago = async () => {
+    error.value = '';
     try {
+      if (!resultado.value) {
+        error.value = 'Primero debes calcular el pago';
+        return;
+      }
       await api.post('/pagos', {
         ...form.value,
         monto: resultado.value.resumen.totalAPagar
@@ -87,6 +138,9 @@ export function usePagos() {
   return {
     pagos, trabajadores, huertos, temporadas,
     cargando, mostrarCalculador, resultado, error, form,
-    cerrarCalculador, nombreTrabajador, calcularPago, registrarPago
+    cerrarCalculador,
+    nombreTrabajador, nombreHuerto, nombreTemporada,
+    trabajadoresDelHuerto, temporadasDelHuerto,
+    calcularPago, registrarPago
   };
 }

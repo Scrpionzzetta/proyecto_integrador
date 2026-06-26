@@ -1,4 +1,3 @@
-// Importamos db desde firebase
 const { db } = require('../config/firebase');
 const obtenerFicha = async (req, res) => {
   const { trabajadorId } = req.params;

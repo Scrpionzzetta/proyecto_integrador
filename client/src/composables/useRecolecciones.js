@@ -20,17 +20,16 @@ export function useRecolecciones() {
     cantidad: ''
   });
 
-  // Listas filtradas segun el huerto seleccionado en el form
   const trabajadoresDelHuerto = ref([]);
   const temporadasDelHuerto = ref([]);
 
   const cargarDatos = async () => {
     try {
       cargando.value = true;
-      const [recoleccionesRes, huertosRes, usuariosRes, temporadasRes] = await Promise.all([
+      const [recoleccionesRes, huertosRes, trabajadoresRes, temporadasRes] = await Promise.all([
         api.get('/recolecciones'),
         api.get('/huertos'),
-        api.get('/usuarios'),
+        api.get('/trabajadores/mis-trabajadores'), // ← Fix: solo los cosecheros del productor
         api.get('/temporadas')
       ]);
 
@@ -38,7 +37,7 @@ export function useRecolecciones() {
         (a, b) => new Date(b.fecha) - new Date(a.fecha)
       );
       huertos.value = huertosRes.data;
-      trabajadores.value = usuariosRes.data.filter(u => u.rol === 'trabajador');
+      trabajadores.value = trabajadoresRes.data; // ← ya vienen filtrados, sin necesidad de .filter()
       temporadas.value = temporadasRes.data;
     } catch (err) {
       console.error('Error cargando datos de recolecciones:', err);
@@ -48,7 +47,7 @@ export function useRecolecciones() {
     }
   };
 
-  // Cuando cambia el huerto, filtramos sus trabajadores activos y temporadas activas
+  // Cuando cambia el huerto filtramos sus cosecheros activos y temporada activa (RF15)
   const onHuertoChange = () => {
     form.value.trabajadorId = '';
     form.value.temporadaId = '';
@@ -60,8 +59,11 @@ export function useRecolecciones() {
     const huerto = huertos.value.find(h => h.id === form.value.huertoId);
     if (!huerto) return;
 
-    const activos = huerto.trabajadoresActivos || [];
-    trabajadoresDelHuerto.value = trabajadores.value.filter(t => activos.includes(t.uid));
+    // Cada trabajador de mis-trabajadores trae su array "huertos"
+    // así que filtramos los que tienen este huertoId
+    trabajadoresDelHuerto.value = trabajadores.value.filter(t =>
+      t.huertos?.some(h => h.huertoId === form.value.huertoId)
+    );
 
     temporadasDelHuerto.value = temporadas.value.filter(
       t => t.huertoId === form.value.huertoId && t.estado === 'activa'
@@ -97,7 +99,6 @@ export function useRecolecciones() {
         tipo: form.value.tipo,
         cantidad: Number(form.value.cantidad)
       });
-
       await cargarDatos();
       cerrarFormulario();
     } catch (err) {
@@ -107,7 +108,7 @@ export function useRecolecciones() {
     }
   };
 
-  // Helpers para mostrar nombres en la tabla en vez de ids
+  // Helpers para la tabla
   const nombreTrabajador = (uid) => {
     const t = trabajadores.value.find(t => t.uid === uid);
     return t ? t.nombre : 'Desconocido';

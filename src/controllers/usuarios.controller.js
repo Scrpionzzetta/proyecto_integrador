@@ -17,9 +17,7 @@ const obtenerUsuarios = async (req, res) => {
       (doc.data().trabajadoresActivos || []).forEach(uid => idsTrabajadores.add(uid));
     });
 
-    if (idsTrabajadores.size === 0) {
-      return res.status(200).json([]);
-    }
+    if (idsTrabajadores.size === 0) return res.status(200).json([]);
 
     const usuarios = await Promise.all(
       Array.from(idsTrabajadores).map(async uid => {
@@ -27,7 +25,6 @@ const obtenerUsuarios = async (req, res) => {
         return doc.exists ? { id: doc.id, ...doc.data() } : null;
       })
     );
-
     return res.status(200).json(usuarios.filter(Boolean));
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
@@ -59,10 +56,7 @@ const obtenerUsuarioPorId = async (req, res) => {
       }
     }
 
-    return res.status(200).json({
-      id: usuarioDoc.id,
-      ...usuarioData
-    });
+    return res.status(200).json({ id: usuarioDoc.id, ...usuarioData });
   } catch (error) {
     console.error('Error al obtener usuario:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
@@ -87,9 +81,7 @@ const editarUsuario = async (req, res) => {
       return res.status(400).json({ error: 'No hay campos para actualizar' });
     }
     await db.collection('usuarios').doc(id).update(datosActualizados);
-    if (nombre) {
-      await admin.auth().updateUser(id, { displayName: nombre });
-    }
+    if (nombre) await admin.auth().updateUser(id, { displayName: nombre });
     return res.status(200).json({ mensaje: 'Usuario actualizado correctamente' });
   } catch (error) {
     console.error('Error al editar usuario:', error);
@@ -130,31 +122,75 @@ const desactivarUsuario = async (req, res) => {
       return res.status(400).json({ error: 'No puedes desactivarte a ti mismo' });
     }
     const usuarioData = usuarioDoc.data();
-    if (usuarioData.rol !== 'trabajador') {
-      return res.status(400).json({ error: 'Solo se pueden desactivar trabajadores' });
+
+    if (usuarioData.activo === false) {
+      return res.status(400).json({ error: 'El usuario ya está desactivado' });
     }
 
-    if (req.usuario.rol !== 'admin') {
-      const huertosSnapshot = await db.collection('huertos')
-        .where('duenoId', '==', req.usuario.uid)
-        .get();
-      const esSuyo = huertosSnapshot.docs.some(doc =>
-        (doc.data().trabajadoresActivos || []).includes(id)
-      );
-      if (!esSuyo) {
-        return res.status(403).json({ error: 'Este trabajador no está activo en ninguno de tus huertos' });
+    if (usuarioData.rol === 'dueño') {
+      if (req.usuario.rol !== 'admin') {
+        return res.status(403).json({ error: 'Solo el administrador puede desactivar productores' });
       }
+    }
+    else if (usuarioData.rol === 'trabajador') {
+      if (req.usuario.rol !== 'admin') {
+        const huertosSnapshot = await db.collection('huertos')
+          .where('duenoId', '==', req.usuario.uid)
+          .get();
+        const esSuyo = huertosSnapshot.docs.some(doc =>
+          (doc.data().trabajadoresActivos || []).includes(id)
+        );
+        if (!esSuyo) {
+          return res.status(403).json({ error: 'Este trabajador no está activo en ninguno de tus huertos' });
+        }
+      }
+    } else {
+      return res.status(400).json({ error: 'No se puede desactivar un administrador' });
     }
 
     await db.collection('usuarios').doc(id).update({
       activo: false,
       desactivadoEn: new Date().toISOString()
     });
-    return res.status(200).json({ mensaje: 'Trabajador desactivado correctamente' });
+    return res.status(200).json({ mensaje: 'Usuario desactivado correctamente' });
   } catch (error) {
     console.error('Error al desactivar usuario:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-module.exports = { obtenerUsuarios, obtenerUsuarioPorId, editarUsuario, eliminarUsuario, desactivarUsuario };
+const activarUsuario = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const usuarioDoc = await db.collection('usuarios').doc(id).get();
+    if (!usuarioDoc.exists) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const usuarioData = usuarioDoc.data();
+
+    if (usuarioData.activo !== false) {
+      return res.status(400).json({ error: 'El usuario ya está activo' });
+    }
+    if (usuarioData.rol === 'admin') {
+      return res.status(400).json({ error: 'No se puede activar/desactivar un administrador' });
+    }
+
+    await db.collection('usuarios').doc(id).update({
+      activo: true,
+      activadoEn: new Date().toISOString()
+    });
+    return res.status(200).json({ mensaje: 'Usuario activado correctamente' });
+  } catch (error) {
+    console.error('Error al activar usuario:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = {
+  obtenerUsuarios,
+  obtenerUsuarioPorId,
+  editarUsuario,
+  eliminarUsuario,
+  desactivarUsuario,
+  activarUsuario
+};

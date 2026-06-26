@@ -12,81 +12,92 @@ import ReportesView from '../views/reportes/ReportesView.vue';
 import ReporteTemporadaView from '../views/reportes/ReporteTemporadaView.vue';
 import RecoleccionesView from '../views/recolecciones/RecoleccionesView.vue';
 
-
-
 const routes = [
   { path: '/', redirect: '/login' },
+
   {
     path: '/login',
     name: 'login',
     component: LoginView,
     meta: { requiresAuth: false }
   },
+
+  // ── Ambos roles ───────────────────────────────────────────
   {
     path: '/dashboard',
     name: 'dashboard',
     component: DashboardView,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/usuarios',
-    name: 'usuarios',
-    component: UsuariosView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['admin', 'dueño'] }
   },
   {
     path: '/huertos',
     name: 'huertos',
     component: HuertosView,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/trabajadores',
-    name: 'trabajadores',
-    component: TrabajadoresView,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/pagos',
-    name: 'pagos',
-    component: PagosView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['admin', 'dueño'] }
   },
   {
     path: '/temporadas',
     name: 'temporadas',
     component: TemporadasView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['admin', 'dueño'] }
   },
   {
-    path: '/ventas',
-    name: 'ventas',
-    component: VentasView,
-    meta: { requiresAuth: true }
+    path: '/recolecciones',
+    name: 'recolecciones',
+    component: RecoleccionesView,
+    meta: { requiresAuth: true, roles: ['admin', 'dueño'] }
   },
+
+  // ── Solo admin (Municipalidad) ────────────────────────────
   {
-    path: '/compradores',
-    name: 'compradores',
-    component: CompradoresView,
-    meta: { requiresAuth: true }
+    path: '/usuarios',
+    name: 'usuarios',
+    component: UsuariosView,
+    meta: { requiresAuth: true, roles: ['admin'] }
   },
   {
     path: '/reportes',
     name: 'reportes',
     component: ReportesView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
+
+  // ── Solo productor (dueño) ────────────────────────────────
+  {
+    path: '/trabajadores',
+    name: 'trabajadores',
+    component: TrabajadoresView,
+    meta: { requiresAuth: true, roles: ['dueño'] }
+  },
+  {
+    path: '/pagos',
+    name: 'pagos',
+    component: PagosView,
+    meta: { requiresAuth: true, roles: ['dueño'] }
+  },
+  {
+    path: '/ventas',
+    name: 'ventas',
+    component: VentasView,
+    meta: { requiresAuth: true, roles: ['dueño'] }
+  },
+  {
+    path: '/compradores',
+    name: 'compradores',
+    component: CompradoresView,
+    meta: { requiresAuth: true, roles: ['dueño'] }
   },
   {
     path: '/reporte-temporada',
     name: 'reporte-temporada',
     component: ReporteTemporadaView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, roles: ['dueño'] }
   },
-  { 
-    path: '/recolecciones',
-    name: 'recolecciones',
-    component: RecoleccionesView,
-    meta: { requiresAuth: true }
+
+  // ── Catch-all ─────────────────────────────────────────────
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/login'
   }
 ];
 
@@ -97,13 +108,28 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const uid = localStorage.getItem('uid');
-  if (to.meta.requiresAuth && !uid) {
-    next('/login');
-  } else if (to.path === '/login' && uid) {
-    next('/dashboard');
-  } else {
-    next();
+  const rol = localStorage.getItem('rol');
+
+  // Ruta pública → dejar pasar, pero si ya está logueado redirigir al dashboard
+  if (!to.meta.requiresAuth) {
+    if (uid && to.path === '/login') {
+      return next('/dashboard');
+    }
+    return next();
   }
+
+  // Ruta protegida sin sesión → login
+  if (!uid) {
+    return next('/login');
+  }
+
+  // Ruta con restricción de rol
+  if (to.meta.roles && !to.meta.roles.includes(rol)) {
+    // Lo mandamos al dashboard, que ambos roles sí pueden ver
+    return next('/dashboard');
+  }
+
+  next();
 });
 
 export default router;
