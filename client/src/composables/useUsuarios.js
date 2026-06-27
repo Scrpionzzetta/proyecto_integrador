@@ -32,8 +32,8 @@ export function useUsuarios() {
     try {
       cargando.value = true;
       const response = await api.get('/usuarios');
-      // Solo mostramos admins y dueños, no trabajadores
-      usuarios.value = response.data.filter(u => u.rol !== 'trabajador');
+
+      usuarios.value = response.data.filter(u => u.rol === 'dueño');
     } catch (err) {
       console.error('Error cargando usuarios:', err);
     } finally {
@@ -45,8 +45,8 @@ export function useUsuarios() {
     error.value = '';
     try {
       if (!form.value.nombre || !form.value.email || !form.value.password ||
-          !form.value.tipo_documento || !form.value.numero_documento || 
-          !form.value.fecha_nacimiento) {
+        !form.value.tipo_documento || !form.value.numero_documento ||
+        !form.value.fecha_nacimiento) {
         error.value = 'Todos los campos son obligatorios';
         return;
       }
@@ -54,17 +54,37 @@ export function useUsuarios() {
       cerrarFormulario();
       await cargarUsuarios();
     } catch (err) {
-      error.value = err.response?.data?.error || 'Error al crear usuario';
+      error.value = err.response?.data?.error || 'Error al crear productor';
+    }
+  };
+
+  const desactivarUsuario = async (uid) => {
+    if (!confirm('¿Desactivar este productor? No podrá acceder al sistema pero su historial se conservará.')) return;
+    try {
+      await api.put(`/usuarios/${uid}/desactivar`);
+      await cargarUsuarios();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al desactivar productor');
+    }
+  };
+
+  const activarUsuario = async (uid) => {
+    if (!confirm('¿Reactivar este productor? Volverá a tener acceso al sistema.')) return;
+    try {
+      await api.put(`/usuarios/${uid}/activar`);
+      await cargarUsuarios();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al activar productor');
     }
   };
 
   const eliminarUsuario = async (uid) => {
-    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+    if (!confirm('¿Eliminar permanentemente este productor? Esta acción no se puede deshacer.')) return;
     try {
       await api.delete(`/usuarios/${uid}`);
       await cargarUsuarios();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al eliminar usuario');
+      alert(err.response?.data?.error || 'Error al eliminar productor');
     }
   };
 
@@ -72,6 +92,7 @@ export function useUsuarios() {
 
   return {
     usuarios, cargando, mostrarFormulario, error, form,
-    cerrarFormulario, crearUsuario, eliminarUsuario
+    cerrarFormulario, crearUsuario,
+    desactivarUsuario, activarUsuario, eliminarUsuario
   };
 }

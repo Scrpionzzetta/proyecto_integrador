@@ -14,15 +14,12 @@ import RecoleccionesView from '../views/recolecciones/RecoleccionesView.vue';
 
 const routes = [
   { path: '/', redirect: '/login' },
-
   {
     path: '/login',
     name: 'login',
     component: LoginView,
     meta: { requiresAuth: false }
   },
-
-  // ── Ambos roles ───────────────────────────────────────────
   {
     path: '/dashboard',
     name: 'dashboard',
@@ -48,7 +45,6 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin', 'dueño'] }
   },
 
-  // ── Solo admin (Municipalidad) ────────────────────────────
   {
     path: '/usuarios',
     name: 'usuarios',
@@ -62,7 +58,6 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin'] }
   },
 
-  // ── Solo productor (dueño) ────────────────────────────────
   {
     path: '/trabajadores',
     name: 'trabajadores',
@@ -93,8 +88,6 @@ const routes = [
     component: ReporteTemporadaView,
     meta: { requiresAuth: true, roles: ['dueño'] }
   },
-
-  // ── Catch-all ─────────────────────────────────────────────
   {
     path: '/:pathMatch(.*)*',
     redirect: '/login'
@@ -110,7 +103,6 @@ router.beforeEach((to, from, next) => {
   const uid = localStorage.getItem('uid');
   const rol = localStorage.getItem('rol');
 
-  // Ruta pública → dejar pasar, pero si ya está logueado redirigir al dashboard
   if (!to.meta.requiresAuth) {
     if (uid && to.path === '/login') {
       return next('/dashboard');
@@ -118,14 +110,11 @@ router.beforeEach((to, from, next) => {
     return next();
   }
 
-  // Ruta protegida sin sesión → login
   if (!uid) {
     return next('/login');
   }
 
-  // Ruta con restricción de rol
   if (to.meta.roles && !to.meta.roles.includes(rol)) {
-    // Lo mandamos al dashboard, que ambos roles sí pueden ver
     return next('/dashboard');
   }
 

@@ -1,36 +1,64 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h1>Gestión de Huertos</h1>
-      <p class="subtitle">Ingresa tus credenciales para continuar</p>
 
-      <form @submit.prevent="handleLogin">
+      <!-- Encabezado verde con logo -->
+      <div class="login-header">
+        <div class="login-logo">
+          <svg viewBox="0 0 30 30" fill="none" width="30" height="30">
+            <ellipse cx="15" cy="11" rx="5" ry="6" fill="#b8e0b8"/>
+            <ellipse cx="9" cy="17" rx="4.5" ry="5" fill="#85c885"/>
+            <ellipse cx="21" cy="17" rx="4.5" ry="5" fill="#85c885"/>
+            <circle cx="15" cy="20" rx="3.5" ry="3.5" fill="rgba(255,255,255,.3)"/>
+          </svg>
+        </div>
+        <div class="login-title">Digital en el Campo</div>
+        <div class="login-sub">Gestion productiva - CFT Maule Campus Parral</div>
+      </div>
+
+      <!-- Formulario -->
+      <div class="login-body">
         <div class="form-group">
-          <label>Agrege su Email</label>
+          <label>Correo electronico</label>
           <input
             v-model="form.email"
             type="email"
             placeholder="correo@ejemplo.com"
-            required
+            @keyup.enter="handleLogin"
           />
         </div>
 
         <div class="form-group">
-          <label>Ingrese su Contraseña</label>
+          <label>Contrasena</label>
           <input
             v-model="form.password"
             type="password"
             placeholder="••••••••"
-            required
+            @keyup.enter="handleLogin"
           />
         </div>
 
-        <p v-if="error" class="error">{{ error }}</p>
+        <p v-if="error" class="error" style="text-align:center; margin-bottom: 8px;">
+          {{ error }}
+        </p>
 
-        <button type="submit" :disabled="cargando">
-          {{ cargando ? 'Ingresando...' : 'Ingresar' }}
+        <button
+          class="login-btn"
+          :disabled="cargando"
+          @click="handleLogin"
+        >
+          {{ cargando ? 'Ingresando...' : 'Ingresar al sistema' }}
         </button>
-      </form>
+
+        <div class="login-hint">
+          Si olvidaste tu contrasena, contacta al administrador del sistema.
+        </div>
+
+        <div class="login-footer">
+          CFT MAULE - Region del Maule - {{ new Date().getFullYear() }}
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -59,96 +87,10 @@ const handleLogin = async () => {
     await authStore.login(form.value.email, form.value.password);
     router.push('/dashboard');
   } catch (err) {
-    error.value = err.message || 'Error al iniciar sesión';
+    // Mostramos el mensaje de error que viene del backend
+    error.value = err.response?.data?.error || err.message || 'Error al iniciar sesion';
   } finally {
     cargando.value = false;
   }
 };
 </script>
-
-<style scoped>
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f0f4f0;
-}
-
-.login-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  width: 100%;
-  max-width: 400px;
-}
-
-h1 {
-  text-align: center;
-  color: #2d6a4f;
-  margin-bottom: 0.5rem;
-}
-
-.subtitle {
-  text-align: center;
-  color: #888;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.3rem;
-  color: #444;
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-input {
-  width: 100%;
-  padding: 0.7rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition: border 0.2s;
-}
-
-input:focus {
-  border-color: #2d6a4f;
-}
-
-button {
-  width: 100%;
-  padding: 0.8rem;
-  background-color: #2d6a4f;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background 0.2s;
-}
-
-button:hover {
-  background-color: #1b4332;
-}
-
-button:disabled {
-  background-color: #aaa;
-  cursor: not-allowed;
-}
-
-.error {
-  color: #e63946;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-</style>

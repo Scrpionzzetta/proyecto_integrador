@@ -1,363 +1,366 @@
-Planificación de proyecto integrador mas desarrollo por etapas:
+# Proyecto Integrador
 
-Etapa 1 — Base - Conexión Firebase + Auth + usuarios con roles
-Etapa 2 — Huertos - CRUD de huertos y asignación de trabajadores
-Etapa 3 — Temporadas y recolecciones - registro de trabajo diario
-Etapa 4 — Pagos - cálculo y registro de pagos por periodo
-Etapa 5 — Fichas - expediente del trabajador con historial
-Etapa 6 — Vue.js - frontend conectado al backend
+Plataforma digital para la gestion productiva de pequeños y medianos productores de berries de la comuna de Parral. Desarrollada en convenio con la Oficina de Desarrollo Rural de la Municipalidad de Parral.
 
---------------------------------------------------------------------------
+CFT Maule — Campus Parral - TNS Informatica - 2026
 
+---
 
-Etapa 1 — Base - Conexión Firebase + Auth + usuarios con roles
+## Tecnologias
 
-1.- Creamos el proyecto con:
-    npm init -y
-2.- Instalamos Express: (Framework minimalista que permite escribir codigo mas rapido)
-    npm install express
-3.- Creamos el gitignore agregando el .env y el node_modules/
-4.- Crearemos la estructura de carpetas de forma manual usando el comando mkdir
-    mkdir src
-    mkdir src/routes src/controllers src/middlewares
-4.1.- Verificamos que las carpetas esten creadas
-5.- Creaciónm de nuestro primer arvhico index.js "Notar que ahora la extencion ha cambiado de .html a .js"
-5.1.- ¿Qué es app.get()?
-        Es un método de Express que dice: "cuando alguien haga una petición GET a la ruta '/', ejecuta esta función".
-        Recibe dos cosas:
+| Capa                  | Tecnologia                        |
+|-----------------------|-----------------------------------|
+| Frontend              | Vue 3 + Vite + Pinia + Vue Router |
+| Backend               | Node.js + Express                 |
+| Base de datos         | Firebase Firestore                |
+| Autenticacion         | Firebase Authentication           |
 
-        La ruta → '/' (la raíz de tu servidor)
-        Una función que se ejecuta cuando alguien entra a esa ruta
-6.- Levanatar el servidor:
-        node src/index.js
-7.- Instalar nodemon:
-        npm install -D nodemon
-8.- Creación del Script en package.json
-    pasamos de esto:
-        "test": "echo \"Error: no test specified\" && exit 1"
-    a esto:
-        "start": "node src/index.js",
-        "dev": "nodemon src/index.js"
-9.-Comenzamos con la integracion de una base de datos, en este caso estaremos usando firebase(Revisar documentación oficial)
-9.1- Instalacion de firebase:
-    npm install firebase
-10.-A continuación vamos a instalar nuevamente firebase, pero agregando el dotenv
-    npm install firebase-admin dotenv
-11.- Creamos el arvichoi .env en nuestra raiz del proyecto
-11.-Agaregamos el puerto y la credencial de Google:
-    PORT=3000
-    GOOGLE_APPLICATION_CREDENTIALS=./src/config/proyectointegrador....
-12.- Creacion del controlador, para este paso nos ubicaremos dentro de la carpeta src/controllers/
-   y crearemos el archivo de nombre "auth.controller.js"
-13.-Creamos el manejo de rutas este archivo "auth.routes.js" lo crearemos en src/routes/
-    y lo importamos en nmuestro index.js, hasta este punto solo estamos viendo el login y el register
-14.-Abrimos Postman y con el metodo POST mandaremos la URL:
-    http://localhost:3000/auth/registro
-14.1.-Como primer paso sera enviar el siguente raw para administrador
-    {
-        "nombre": "Juan Admin",
-        "email": "juan@gmail.com",
-        "password": "123456",
-        "rol": "admin",
-        "tipo_documento": "rut",
-        "numero_documento": "12.345.678-9",
-        "fecha_nacimiento": "1985-03-15",
-        "telefono": "+56912345678"
-    }
-14.2.-ahora para el dueño de fundo:
-    {
-        "nombre": "Carlos Dueño",
-        "email": "carlos@gmail.com",
-        "password": "123456",
-        "rol": "dueño",
-        "tipo_documento": "rut",
-        "numero_documento": "15.678.432-5",
-        "fecha_nacimiento": "1978-06-10",
-        "telefono": "+56934567890"
-    }
-14.3.- El resultado que nos arroja sera:
-    {
-        "mensaje": "Usuario creado correctamente",
-        "uid": "kULPf8k7uDWdbXAVm7UFk1bCAon2"
-    }
-14.4.-el resultado para el dueño sera:
-    {
-        "mensaje": "Usuario creado correctamente",
-        "uid": "7dEsTtmvYqXzigPqXQL2MPLCPqG3"
-    }
-15.- Iniciar sesion, para este paso vamos a abrir postman y creamos una peticion POST nuevamente con los siguentes datos
-    {
-        "email": "juan@gmail.com",
-        "password": "123456"
-    }
-15.1.- lo que nos mostrara:
-    {
-        "mensaje": "Login exitoso",
-        "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsImlhdCI6MTc3Nzc3NDQzMSwiZXhwIjoxNzc3Nzc4MDMxLCJpc3MiOiJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0Bwcm95ZWN0b2ludGVncmFkb3ItM2NjOTEuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0Bwcm95ZWN0b2ludGVncmFkb3ItM2NjOTEuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJ1aWQiOiI0MWlsMUNjZ3M3T2JnaGhEbUlwdlRaNGlKTk8yIn0.XCA8i5-zrd6UT4DU0jQz05-Rc8K_PolFx0mv_QOxq3MczmRogTwUf2zyKusZ7prCknQ4vA-UX7EDnrDi-e4fygvM60nHDpNpznnbKmr0dBURpCeco_ioG4cG9ZVsaVs3Eh70HYGNsRytpxjdJkgY5J1tyCdoZhRAX1_EHXHz2puBBoZphD5EY-xCRpSU-UKJRs4xpDV4cv7zEeE9X8R2_UNiUbXqwSlV50mQ3N0i8YJyG_Njtlbsg368XJfp5Lxcx5R-oC6U0LYnQ8kykzIX7tYWSzS2MLD1K6QVK3xQCaRxpzIkzNkb78_XoXbOk0WHTEN7OYvbfWD2o88gOlOA0w",
-        "usuario": {
-            "uid": "41il1Ccgs7ObghhDmIpvTZ4iJNO2",
-            "nombre": "Juan Admin",
-            "email": "juan@gmail.com",
-            "rol": "admin"
-        }
-    }
-16.-Creación de moddleware, vamos a configurar el token
-    creamos un nuevo documento "auth.middleware.js" en middleware
-16.1.- vamos a verificar los roles creando en la misma carpeta src/middleware
-    creando el siguente archivo "roles.middleware.js"
+---
 
+## Estructura del proyecto
 
---------------------------------------------------------------------------
+El proyecto esta organizado como monorepo, es decir que el backend y el frontend conviven en la misma carpeta raiz(PROYECTO_INTEGRADOR).
 
-Etapa 2 — Huertos - CRUD de huertos y asignación de trabajadores
+```
+PROYECTO_INTEGRADOR/
+├── src/                        # Backend Node.js
+│   ├── config/
+│   │   └── firebase.js
+│   ├── controllers/
+│   │   ├── auth.controllers.js
+│   │   ├── compradores.controller.js
+│   │   ├── fichas.controller.js
+│   │   ├── huertos.controller.js
+│   │   ├── pagos.controller.js
+│   │   ├── recolecciones.controller.js
+│   │   ├── reportes.controller.js
+│   │   ├── temporadas.controller.js
+│   │   ├── trabajadores.controller.js
+│   │   ├── usuarios.controller.js
+│   │   └── ventas.controller.js
+│   ├── middlewares/
+│   │   ├── auth.middleware.js
+│   │   └── roles.middleware.js
+│   └── routes/
+│       ├── auth.routes.js
+│       ├── compradores.routes.js
+│       ├── fichas.routes.js
+│       ├── huertos.routes.js
+│       ├── pagos.routes.js
+│       ├── recolecciones.routes.js
+│       ├── reportes.routes.js
+│       ├── temporadas.routes.js
+│       ├── trabajadores.routes.js
+│       ├── usuarios.routes.js
+│       └── ventas.routes.js
+├── index.js                    # Entrada del servidor
+├── package.json
+├── .env                        # Variables de entorno (no subir a Git)
+└── client/                     # Frontend Vue 3
+    └── src/
+        ├── components/
+        │   └── AppSidebar.vue
+        ├── composables/
+        ├── router/
+        ├── services/
+        │   └── api.js
+        ├── stores/
+        ├── views/
+        ├── App.vue
+        ├── main.js
+        └── style.css
+```
 
-1.- Ahora creqamos el huertos.controller
-2.- Para este punbto vamos a crear el huertos.routes.js
-3.- Como anterior mente llamamos al Auth en el index ahora debemos hacer lo mismo para el el huerto:
-    app.use('/huertos', huertoRoutes);
-4.- Como vamos a probar esto?
-4.1.- Iniciamos sesion con el el usuario en el postman:
-    {
-        "email": "juan@gmail.com",
-        "password": "123456"
-    }
-4.2.- Copiamos el uid y lo agregamos en bearer token, luego vamos a la ruta
-    http://localhost:3000/huertos y agregamos un nuevo huerto:
-    {
-        "nombre": "Huerto Los Aromos",
-        "ubicacion": "Parral, Chile"
-    }
-5.- Para obtener los huertos creados vamos a la siguente ubicacion
-    GET http://localhost:3000/huertos
-6.- Para eliminar los huertos vamos a cambiar el metodo de get a Delete mantenemos el incio de la URL pero
-    agregamos el id del huerto creado, quedando asi la url http://localhost:3000/huertos/DvjevQ8bbq9jCLQ1bhir
-7.- Lo que nos toca crear a continuacion es agregar al trabajor a cada huerto
-    para ello vamos a agregar "asignarTrabajador" y "desasignarTrabajador" dentro de huertos.controller
-    finalmente para no tener errores exportamos los dos nuevos metodos en el module.export
-8.- Una vcez agregado debemos incluirlos en el huertos.routes para poder usar esos metodos
-    quedandonos de esta forma:
-        const { 
-            crearHuerto, 
-            obtenerHuertos, 
-            obtenerHuertoPorId, 
-            editarHuerto, 
-            eliminarHuerto,
-            asignarTrabajador,
-            desasignarTrabajador
-        } = require('../controllers/huertos.controller');
-9.- ¿Como vamos a probar todo esto?
-    Crearemos un trabajador desde 0, guartdando el uid que nos devuelve,
-    el primer paso es ir a postman y en la URL de registro agregamos lo siguente:
-    Paso 1:
-    Agregar URL y JSON
-    POST http://localhost:3000/auth/registro
-    {
-        "nombre": "Pedro Trabajador",
-        "email": "pedro@gmail.com",
-        "password": "123456",
-        "rol": "trabajador",
-        "tipo_documento": "rut",
-        "numero_documento": "98.765.432-1",
-        "fecha_nacimiento": "1995-07-20",
-        "telefono": "+56987654321",
-        "nacionalidad": "chileno",
-        "tipo_contrato": "con_contrato"
-    }
-    uid del trabajador: ssNeLKZsqPaWRcYuBnlZxzDxpQK2
+---
 
-    Error, Falta iniciar la sesion
+## Requisitos previos
 
-    Paso 2:
-    Ingresamos con login de carlos
-    POST http://localhost:3000/auth/login
-    Login de carlos:
-    {
-        "email": "carlos@gmail.com",
-        "password": "123456"
-    }
-    uid de carlos: 7dEsTtmvYqXzigPqXQL2MPLCPqG3
+- Node.js v18 o superior
+- Cuenta en Firebase con un proyecto creado
+- Firestore habilitado en el proyecto Firebase
+- Archivo de credenciales de Firebase Admin SDK (`.json`)
 
-    Paso 3:
-    Agregamos el Huerto
-    POST http://localhost:3000/huertos 
-    Agregamos el JSON:
-    {
-        "nombre": "Huerto Los Aromos",
-        "ubicacion": "Chillan, Chile"
-    }
-    Response:
-    {
-        "mensaje": "Huerto creado correctamente",
-        "id": "R910NG5uBE0zTivZn7V6"
-    }
+---
 
-    Paso 4:
-    POST http://localhost:3000/huertos/<id del huerto>/asignar
-    JSON:
-    {
-        "trabajadorId": "<uid del trabajador>"
-    }
-    Response:
-    {
-        "id": "R910NG5uBE0zTivZn7V6",
-        "nombre": "Huerto Los Aromos",
-        "ubicacion": "Chillan, Chile",
-        "duenoId": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
-        "creadoEn": "2026-05-04T00:49:56.202Z",
-        "trabajadorActivoId": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2"
-    }
+## Instalacion
 
-    Paso 5:
-    GET http://localhost:3000/huertos/<id del huerto>
-    Response:
-    {
-        "id": "R910NG5uBE0zTivZn7V6",
-        "nombre": "Huerto Los Aromos",
-        "ubicacion": "Chillan, Chile",
-        "duenoId": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
-        "creadoEn": "2026-05-04T00:49:56.202Z",
-        "trabajadorActivoId": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2"
-    }
+### 1. Clonar el repositorio
 
---------------------------------------------------------------------------
+```bash
+git clone https://github.com/Scrpionzzetta/proyecto_integrador
+cd PROYECTO_INTEGRADOR
+```
 
-Etapa 3 — Temporadas y recolecciones - registro de trabajo diario
+### 2. Configurar el backend
 
-1.- Creación de temporadasController, primero crearemos el controlador, en la caprtea correspondiente
-2.- Creación de temporadasRutes, en la carpeta correspondiente
-3.- Ahora pasamos a las pruebas de forma inmediata:
-    Paso 1 Login:
-        POST http://localhost:3000/auth/login
-        JSON:
-            {
-                "email": "carlos@gmail.com",
-                "password": "123456"
-            }
-        Response:
-            "uid": "7dEsTtmvYqXzigPqXQL2MPLCPqG3"
-    Paso 2 Crear Temporada:
-        Agregar El token: 7dEsTtmvYqXzigPqXQL2MPLCPqG3
-        POST http://localhost:3000/temporadas
-        JSON:
-            {
-                "huertoId": "<id del huerto creado antes>",
-                "fruta": "Manzana",
-                "fechaInicio": "2026-05-01"
-            } R910NG5uBE0zTivZn7V6
-        Response:
-            {
-                "mensaje": "Temporada creada correctamente",
-                "id": "ACpBcRZYanB8c52Z6cDu"
-            }
-    Paso 3 Listar Temporada:
-        GET http://localhost:3000/temporadas
-        Response:
-            {
-                "id": "ACpBcRZYanB8c52Z6cDu",
-                "huertoId": "R910NG5uBE0zTivZn7V6",
-                "fruta": "Manzana",
-                "fechaInicio": "2026-05-01",
-                "fechaFin": null,
-                "estado": "activa",
-                "creadoPor": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
-                "creadoEn": "2026-05-04T01:15:04.920Z"
-            }
+```bash
+npm install
+```
 
+Crear el archivo `.env` en la raiz del proyecto (Opcional, modificar el `env` a `.env` en la raiz del proyecrto):
 
---------------------------------------------------------------------------
+```
+PORT=3000
+GOOGLE_APPLICATION_CREDENTIALS=./src/config/nombre-del-archivo-firebase.json
+```
 
-Etapa adicional, gestion de usuarios:
-1.- Se crea el controlador y el routes, estos se agregan al index
-2.- Pruebas en postMan:
-    Paso 1 Login de admin:
-        {
-            "email": "juan@gmail.com",
-            "password": "123456"
-        }
-        uid: kULPf8k7uDWdbXAVm7UFk1bCAon2
-    Paso 2 obtenemos a los usuarios:
-    GET http://localhost:3000/usuarios
-    [
-        {
-            "id": "41il1Ccgs7ObghhDmIpvTZ4iJNO2",
-            "uid": "41il1Ccgs7ObghhDmIpvTZ4iJNO2",
-            "nombre": "Juan Admin",
-            "email": "juan@gmail.com",
-            "rol": "admin",
-            "creadoEn": "2026-05-03T02:11:27.719Z"
-        },
-        {
-            "id": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
-            "uid": "7dEsTtmvYqXzigPqXQL2MPLCPqG3",
-            "nombre": "Carlos Dueño",
-            "email": "carlos@gmail.com",
-            "rol": "dueño",
-            "tipo_documento": "rut",
-            "numero_documento": "15.678.432-5",
-            "fecha_nacimiento": "1978-06-10",
-            "telefono": "+56934567890",
-            "creadoEn": "2026-05-03T02:45:21.022Z"
-        },
-        {
-            "id": "kULPf8k7uDWdbXAVm7UFk1bCAon2",
-            "uid": "kULPf8k7uDWdbXAVm7UFk1bCAon2",
-            "nombre": "Juan Admin",
-            "email": "juan@gmail.com",
-            "rol": "admin",
-            "creadoEn": "2026-05-03T02:34:31.059Z"
-        },
-        {
-            "id": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2",
-            "uid": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2",
-            "nombre": "Pedro Trabajador",
-            "email": "pedro@gmail.com",
-            "rol": "trabajador",
-            "tipo_documento": "rut",
-            "numero_documento": "98.765.432-1",
-            "fecha_nacimiento": "1995-07-20",
-            "telefono": "+56987654321",
-            "creadoEn": "2026-05-04T00:48:00.606Z",
-            "nacionalidad": "chileno",
-            "tipo_contrato": "con_contrato"
-        }
-    ]
-    Paso 3 obtenemos usuario por ID
-    GET http://localhost:3000/usuarios/<uid del trabajador>
-    {
-        "id": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2",
-        "uid": "ssNeLKZsqPaWRcYuBnlZxzDxpQK2",
-        "nombre": "Pedro Trabajador",
-        "email": "pedro@gmail.com",
-        "rol": "trabajador",
-        "tipo_documento": "rut",
-        "numero_documento": "98.765.432-1",
-        "fecha_nacimiento": "1995-07-20",
-        "telefono": "+56987654321",
-        "creadoEn": "2026-05-04T00:48:00.606Z",
-        "nacionalidad": "chileno",
-        "tipo_contrato": "con_contrato"
-    }
+Colocar el archivo `.json` de credenciales de Firebase Admin SDK dentro de `src/config/`.
 
---------------------------------------------------------------------------
+Levantar el servidor backend:
 
-Etapa 4 — Pagos - cálculo y registro de pagos por periodo
+```bash
+npm run dev
+```
 
-1.- Se crea el controlador y el routes, estos se agregan al index
+El servidor quedara disponible en `http://localhost:3000`
 
+### 3. Configurar el frontend
 
+```bash
+cd client
+npm install
+npm run dev
+```
 
---------------------------------------------------------------------------
+El frontend quedara disponible en `http://localhost:5173`
 
-Front-end
+---
 
-1.- Creamos erl cliente con un template de vue.js
-    npm create vite@latest client -- --template vue
-2.- Damos que si a todo y entramos a http://localhost:5173/
-3.- Agregamos pinia
-    npm install vue-router pinia axios
-4.- Entramos a client y inbstalamos axios con el comando:
-    npm install vue-router pinia axios
-5.- Creación de caprteas
-6.- Instalamos cors para recibir peticiones del front hacia el back
-    npm install cors
-7.- Generamos las vistas
+## Roles del sistema
+
+## Roles del sistema
+
+**Administrador** — Personal de la Oficina Rural de la Municipalidad de Parral
+- Crea y gestiona cuentas de productores
+- Visualiza estadisticas consolidadas de produccion
+- Genera reportes por productor, especie y temporada
+
+**Productor** — Dueno del campo o huerto agricola
+- Gestiona sus cosecheros y temporadas
+- Registra cosechas diarias por cosechero
+- Controla pagos y lleva registro de ventas
+- Genera reporte de cierre de temporada
+
+> Los cosecheros no tienen acceso al sistema web. Son registrados
+> por el productor y aparecen en los registros de cosecha y pagos.
+
+Los cosecheros no tienen acceso al sistema web. Son registrados por el productor y aparecen en los registros de cosecha y pagos.
+
+---
+
+## Rutas de la API
+
+Todas las rutas protegidas requieren el header:
+```
+Authorization: Bearer <uid>
+```
+### Autenticacion
+
+**POST** `/auth/registro` — Crear nuevo usuario — Publico
+**POST** `/auth/login` — Iniciar sesion — Publico
+
+### Usuarios
+
+**GET** `/usuarios` — Listar usuarios — admin, dueno
+**GET** `/usuarios/:id` — Obtener usuario por ID — admin, dueno
+**PUT** `/usuarios/:id` — Editar usuario — admin
+**DELETE** `/usuarios/:id` — Eliminar usuario — admin
+**PUT** `/usuarios/:id/desactivar` — Desactivar cuenta — admin, dueno
+**PUT** `/usuarios/:id/activar` — Reactivar cuenta — admin
+
+### Huertos
+
+**GET** `/huertos` — Listar huertos — admin, dueno
+**POST** `/huertos` — Crear huerto — admin, dueno
+**GET** `/huertos/:id` — Obtener huerto por ID — admin, dueno
+**PUT** `/huertos/:id` — Editar huerto — admin, dueno
+**DELETE** `/huertos/:id` — Eliminar huerto — admin
+**POST** `/huertos/:id/asignar` — Asignar cosechero — admin, dueno
+**POST** `/huertos/:id/desasignar` — Desasignar cosechero — admin, dueno
+
+### Temporadas
+
+**GET** `/temporadas` — Listar temporadas — admin, dueno
+**POST** `/temporadas` — Crear temporada — admin, dueno
+**GET** `/temporadas/:id` — Obtener temporada por ID — admin, dueno
+**PUT** `/temporadas/:id/cerrar` — Cerrar temporada — admin, dueno
+**DELETE** `/temporadas/:id` — Eliminar temporada cerrada — admin, dueno
+
+### Recolecciones
+
+**GET** `/recolecciones` — Listar recolecciones — admin, dueno
+**POST** `/recolecciones` — Registrar recoleccion — admin, dueno
+**GET** `/recolecciones/trabajador/:id` — Por cosechero — admin, dueno
+**GET** `/recolecciones/temporada/:id` — Por temporada — admin, dueno
+
+### Pagos
+
+**GET** `/pagos` — Listar pagos — admin, dueno
+**POST** `/pagos/calcular` — Calcular pago por periodo — admin, dueno
+**POST** `/pagos` — Registrar pago — admin, dueno
+**GET** `/pagos/trabajador/:id` — Pagos por cosechero — admin, dueno
+
+### Ventas
+
+**GET** `/ventas` — Listar ventas — admin, dueno
+**POST** `/ventas` — Registrar venta — admin, dueno
+**DELETE** `/ventas/:id` — Eliminar venta — admin, dueno
+
+### Compradores
+
+**GET** `/compradores` — Listar compradores — admin, dueno
+**POST** `/compradores` — Crear comprador — admin, dueno
+**DELETE** `/compradores/:id` — Eliminar comprador — admin, dueno
+
+### Trabajadores
+
+**GET** `/trabajadores/mis-trabajadores` — Cosecheros asignados al dueno — admin, dueno
+**GET** `/trabajadores/libres` — Cosecheros sin huerto asignado — admin, dueno
+
+### Fichas
+
+**GET** `/fichas` — Fichas de todos los cosecheros — admin, dueno
+**GET** `/fichas/:trabajadorId` — Ficha individual con estadisticas — admin, dueno
+
+### Reportes
+
+**GET** `/reportes` — Reporte global con filtros — admin
+**GET** `/reportes/ultimos-ingresos` — Ultimas 10 recolecciones — admin
+**GET** `/reportes/temporada/:id` — Reporte completo de temporada — admin, dueno
+---
+
+## Tutorial de uso
+
+### Administrador (Municipalidad de Parral)
+
+El administrador es el primer usuario del sistema. Su cuenta debe crearse directamente desde la API antes de que el sistema este operativo.
+
+**Paso 1 — Crear la cuenta de administrador**
+
+Usar Postman o cualquier cliente HTTP:
+
+```
+POST http://localhost:3000/auth/registro
+
+{
+  "nombre": "Nombre del Administrador",
+  "email": "admin@municipalidadparral.cl",
+  "password": "contrasena_segura",
+  "rol": "admin",
+  "tipo_documento": "rut",
+  "numero_documento": "12.345.678-9",
+  "fecha_nacimiento": "1980-01-01"
+}
+```
+
+**Paso 2 — Ingresar al sistema**
+
+Abrir el navegador en `http://localhost:5173` (o la URL del servidor en produccion), ingresar el correo y la contrasena creados. El sistema redirige automaticamente al panel de administracion.
+
+**Paso 3 — Crear cuentas de productores**
+
+Desde el menu lateral ir a Productores y hacer clic en Nuevo Productor. Completar nombre, RUT, correo y contrasena inicial. Las credenciales deben entregarse personalmente al productor.
+
+**Paso 4 — Gestionar productores activos**
+
+En la vista de Productores se puede ver el estado de cada cuenta. Usar Desactivar para bloquear el acceso de un productor sin eliminar su historial, y Activar para restaurarlo.
+
+**Paso 5 — Ver reportes globales**
+
+Desde el menu ir a Reportes globales. Usar los filtros de productor, especie y temporada para acotar los resultados. Sin filtros se muestra la produccion consolidada de todos los productores.
+
+---
+
+### Productor (Dueno del huerto)
+
+El productor ingresa con las credenciales que le entrego el administrador.
+
+**Paso 1 — Ingresar al sistema**
+
+Abrir el navegador en la URL del sistema, ingresar el correo y la contrasena. El sistema redirige automaticamente al panel del productor.
+
+**Paso 2 — Registrar un huerto**
+
+Ir a Huertos y hacer clic en Nuevo Huerto. Ingresar nombre y ubicacion. El huerto quedara registrado a nombre del productor.
+
+**Paso 3 — Registrar cosecheros**
+
+Ir a Cosecheros y hacer clic en Nuevo Cosechero. Completar los datos del trabajador: nombre, RUT o pasaporte, fecha de nacimiento, telefono, nacionalidad y tipo de contrato. El cosechero no tendra acceso al sistema web.
+
+**Paso 4 — Asignar cosecheros al huerto**
+
+En la vista de Huertos, hacer clic en Asignar en el huerto correspondiente. Seleccionar el cosechero de la lista de disponibles. Un cosechero puede estar asignado a varios huertos del mismo productor pero no a huertos de otro productor.
+
+**Paso 5 — Crear una temporada**
+
+Ir a Temporadas y hacer clic en Nueva Temporada. Seleccionar el huerto, ingresar la especie o variedad de fruta, la fecha de inicio y los precios por bandeja y por kilo. Solo puede haber una temporada activa por huerto.
+
+**Paso 6 — Registrar cosechas diarias**
+
+Ir a Cosechas diarias y hacer clic en Registrar Cosecha. Seleccionar el huerto, el cosechero asignado y la temporada activa. Elegir el tipo (bandeja o granel) e ingresar la cantidad. El precio vigente se guarda automaticamente en el registro.
+
+**Paso 7 — Calcular y registrar pagos**
+
+Ir a Pagos y hacer clic en Calcular Pago. Seleccionar el huerto, el cosechero y la temporada. Elegir el periodo (quincenal o mensual) e ingresar el rango de fechas. El sistema calcula automaticamente el total segun los kilos registrados y el precio vigente al momento de cada cosecha. Hacer clic en Registrar Pago para guardar.
+
+**Paso 8 — Registrar ventas**
+
+Ir a Compradores y agregar los compradores de la temporada (empresa o persona). Luego ir a Ventas y registrar cada operacion indicando comprador, fecha, especie, cantidad y precio de venta.
+
+**Paso 9 — Ver el reporte de temporada**
+
+Ir a Reporte de temporada, seleccionar la temporada y hacer clic en Generar Reporte. El sistema muestra el balance completo: kilos cosechados, ventas realizadas, pagos a cosecheros y balance financiero. Este documento puede presentarse a la Oficina de Desarrollo Rural.
+
+**Paso 10 — Cerrar la temporada**
+
+Cuando la cosecha finalice, ir a Temporadas y hacer clic en Cerrar. Ingresar la fecha de cierre. Una temporada cerrada no acepta nuevas cosechas pero conserva todo su historial.
+
+---
+
+## Checklist de seguridad para produccion
+
+Antes de publicar el sistema en un servidor de internet verificar los siguientes puntos:
+
+- El archivo `.env` no esta incluido en el repositorio Git (verificar `.gitignore`)
+- El archivo de credenciales Firebase `.json` no esta incluido en el repositorio Git
+- La variable `origin` en `app.use(cors(...))` apunta a la URL real del frontend, no a `localhost`
+- El frontend apunta a la URL real del backend en `client/src/services/api.js`
+- Firebase tiene reglas de seguridad configuradas en Firestore (no en modo test)
+- Las contrasenas iniciales de los productores se cambian tras el primer ingreso
+- El servidor backend corre detras de un proxy inverso (Nginx o similar) con HTTPS habilitado
+- El puerto 3000 no esta expuesto directamente a internet
+
+---
+
+## Variables de entorno requeridas(esta debe crearce al momento de levantar el proyecto)
+
+```
+PORT=3000
+GOOGLE_APPLICATION_CREDENTIALS=./src/config/nombre-credencial-firebase.json
+```
+
+---
+
+## Levantar ambos servidores en desarrollo
+
+Abrir dos terminales en la raiz del proyecto:
+
+Terminal 1 — Backend:
+```bash
+npm run dev
+```
+
+Terminal 2 — Frontend:
+```bash
+cd client
+npm run dev
+```
+
+---
+
+## Creditos
+
+Proyecto desarrollado por estudiantes de TNS Informatica del CFT Maule Campus Parral, primer semestre 2026, en convenio con la Oficina de Desarrollo Rural de la Municipalidad de Parral.
+
+Coordinador: Pablo Sepulveda
+Docentes: Rocio Ortiz y Daniel Scarlazzetta

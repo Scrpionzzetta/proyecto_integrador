@@ -3,8 +3,7 @@ import api from '../services/api';
 
 export function useHuertos() {
   const huertos = ref([]);
-  const trabajadores = ref([]);
-  const trabajadoresDisponibles = ref([]); // ← solo los disponibles
+  const trabajadoresDisponibles = ref([]);
   const cargando = ref(true);
   const mostrarFormulario = ref(false);
   const mostrarAsignar = ref(false);
@@ -24,38 +23,35 @@ export function useHuertos() {
     mostrarAsignar.value = false;
     huertoSeleccionado.value = null;
     formAsignar.value = { trabajadorId: '' };
+    trabajadoresDisponibles.value = [];
     error.value = '';
   };
 
   const abrirAsignar = async (huerto) => {
     huertoSeleccionado.value = huerto;
     mostrarAsignar.value = true;
+    trabajadoresDisponibles.value = [];
 
     try {
-      // Cargamos los trabajadores libres al abrir el modal
       const response = await api.get('/trabajadores/libres');
-
-      // Filtramos los que ya estan en este huerto
       const yaAsignados = huerto.trabajadoresActivos || [];
       trabajadoresDisponibles.value = response.data.filter(
         t => !yaAsignados.includes(t.uid)
       );
     } catch (err) {
       console.error('Error cargando trabajadores disponibles:', err);
+      error.value = 'No se pudieron cargar los cosecheros disponibles';
     }
   };
 
   const cargarHuertos = async () => {
     try {
       cargando.value = true;
-      const [huertosRes, usuariosRes] = await Promise.all([
-        api.get('/huertos'),
-        api.get('/usuarios')
-      ]);
-      huertos.value = huertosRes.data;
-      trabajadores.value = usuariosRes.data.filter(u => u.rol === 'trabajador');
+      const response = await api.get('/huertos');
+      huertos.value = response.data;
     } catch (err) {
       console.error('Error cargando huertos:', err);
+      error.value = 'No se pudieron cargar los huertos';
     } finally {
       cargando.value = false;
     }
@@ -90,7 +86,7 @@ export function useHuertos() {
     error.value = '';
     try {
       if (!formAsignar.value.trabajadorId) {
-        error.value = 'Debes seleccionar un trabajador';
+        error.value = 'Debes seleccionar un cosechero';
         return;
       }
       await api.post(`/huertos/${huertoSeleccionado.value.id}/asignar`, {
@@ -99,34 +95,28 @@ export function useHuertos() {
       cerrarAsignar();
       await cargarHuertos();
     } catch (err) {
-      error.value = err.response?.data?.error || 'Error al asignar trabajador';
+      error.value = err.response?.data?.error || 'Error al asignar cosechero';
     }
   };
 
   const desasignarTrabajador = async (huertoId, trabajadorId) => {
-    if (!confirm('¿Desasignar este trabajador del huerto?')) return;
+    if (!confirm('¿Desasignar este cosechero del huerto?')) return;
     try {
       await api.post(`/huertos/${huertoId}/desasignar`, { trabajadorId });
       await cargarHuertos();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al desasignar trabajador');
+      alert(err.response?.data?.error || 'Error al desasignar cosechero');
     }
-  };
-
-  const nombreTrabajador = (uid) => {
-    const t = trabajadores.value.find(t => t.uid === uid);
-    return t ? t.nombre : 'Desconocido';
   };
 
   onMounted(cargarHuertos);
 
   return {
-    huertos, trabajadores, trabajadoresDisponibles, cargando,
+    huertos, trabajadoresDisponibles, cargando,
     mostrarFormulario, mostrarAsignar,
     huertoSeleccionado, error, form, formAsignar,
     cerrarFormulario, cerrarAsignar, abrirAsignar,
     crearHuerto, eliminarHuerto,
-    asignarTrabajador, desasignarTrabajador,
-    nombreTrabajador
+    asignarTrabajador, desasignarTrabajador
   };
 }

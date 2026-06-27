@@ -1,7 +1,10 @@
 import { ref, onMounted } from 'vue';
 import api from '../services/api';
+import { useAuthStore } from '../stores/auth.store';
 
 export function useTrabajadores() {
+  const authStore = useAuthStore();
+
   const misTrabajadores = ref([]);
   const trabajadoresLibres = ref([]);
   const cargando = ref(true);
@@ -26,8 +29,6 @@ export function useTrabajadores() {
     };
   };
 
-
-  /*
   const cargarTrabajadores = async () => {
     try {
       cargando.value = true;
@@ -35,23 +36,6 @@ export function useTrabajadores() {
         api.get('/trabajadores/mis-trabajadores'),
         api.get('/trabajadores/libres')
       ]);
-      misTrabajadores.value = misRes.data;
-      trabajadoresLibres.value = libresRes.data;
-    } catch (err) {
-      console.error('Error cargando trabajadores:', err);
-    } finally {
-      cargando.value = false;
-    }
-  };*/
-  const cargarTrabajadores = async () => {
-    try {
-      cargando.value = true;
-      const [misRes, libresRes] = await Promise.all([
-        api.get('/trabajadores/mis-trabajadores'),
-        api.get('/trabajadores/libres')
-      ]);
-      console.log('Mis trabajadores:', misRes.data);
-      console.log('Trabajadores libres:', libresRes.data);
       misTrabajadores.value = misRes.data;
       trabajadoresLibres.value = libresRes.data;
     } catch (err) {
@@ -61,6 +45,7 @@ export function useTrabajadores() {
     }
   };
 
+  // RF12 — Registrar cosechero
   const crearTrabajador = async () => {
     error.value = '';
     try {
@@ -69,37 +54,40 @@ export function useTrabajadores() {
       await cargarTrabajadores();
     } catch (err) {
       error.value = err.response?.data?.error || 'Error al registrar trabajador';
-      console.error('Error:', err.response?.data);
-      alert('Error:', err.response?.data);
     }
   };
 
+  // RF13 — Desactivar cosechero (productor y admin)
+  // El cosechero conserva historial pero deja de aparecer en registros nuevos
   const desactivarTrabajador = async (uid) => {
-  if (!confirm('¿Desactivar este trabajador? Su historial se conservará.')) return;
-  try {
-    await api.put(`/usuarios/${uid}/desactivar`);
-    await cargarTrabajadores();
-  } catch (err) {
-    alert(err.response?.data?.error || 'Error al desactivar trabajador');
-  }
+    if (!confirm('¿Desactivar este cosechero? Su historial se conservará.')) return;
+    try {
+      await api.put(`/usuarios/${uid}/desactivar`);
+      await cargarTrabajadores();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al desactivar cosechero');
+    }
   };
 
+  // Solo admin — elimina la cuenta permanentemente
+  const eliminarTrabajador = async (uid) => {
+    if (!authStore.esAdmin) return; // guarda extra en el frontend
+    if (!confirm('¿Eliminar permanentemente este cosechero? Esta acción no se puede deshacer.')) return;
+    try {
+      await api.delete(`/usuarios/${uid}`);
+      await cargarTrabajadores();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Error al eliminar cosechero');
+    }
+  };
+
+  // Ver ficha completa del cosechero (RF12)
   const verFicha = async (uid) => {
     try {
       const response = await api.get(`/fichas/${uid}`);
       fichaSeleccionada.value = response.data;
     } catch (err) {
-      alert('Error al cargar ficha');
-    }
-  };
-
-  const eliminarTrabajador = async (uid) => {
-    if (!confirm('¿Estás seguro de eliminar este trabajador?')) return;
-    try {
-      await api.delete(`/usuarios/${uid}`);
-      await cargarTrabajadores();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Error al eliminar trabajador');
+      alert('Error al cargar ficha del cosechero');
     }
   };
 
@@ -109,6 +97,7 @@ export function useTrabajadores() {
     misTrabajadores, trabajadoresLibres, cargando,
     mostrarFormulario, fichaSeleccionada, error, form,
     pestanaActiva, cerrarFormulario, crearTrabajador,
-    verFicha, eliminarTrabajador, cargarTrabajadores, desactivarTrabajador
+    verFicha, eliminarTrabajador, desactivarTrabajador,
+    cargarTrabajadores, authStore
   };
 }
